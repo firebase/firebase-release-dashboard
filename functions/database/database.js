@@ -1,6 +1,5 @@
 const admin = require("firebase-admin");
 const db = admin.firestore();
-const {Timestamp} = require("firebase-admin/firestore");
 const RELEASE_STATES = require("../utils/releaseStates.js");
 const {
   validateNewReleasesStructure,
