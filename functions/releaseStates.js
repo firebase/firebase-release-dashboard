@@ -6,4 +6,5 @@ module.exports = {
   RELEASE_DAY: "release day",
   RELEASED: "released",
   DELAYED: "delayed",
+  ERROR: "error",
 };

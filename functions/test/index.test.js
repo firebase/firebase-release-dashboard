@@ -1,15 +1,21 @@
 const chai = require("chai");
 const sinon = require("sinon");
 const expect = chai.expect;
+const {Timestamp} = require("firebase-admin/firestore");
+
 const {validateNewReleases} = require("../index");
 const {validateNewReleaseStructure} = require("../index");
 const {convertDatesToTimestamps} = require("../index");
 const {isFutureDate} = require("../index");
 const {isValidReleaseName} = require("../index");
 const {getReleaseNumbers} = require("../index");
-const ERRORS = require("../utils/errors");
+const {calculateReleaseState} = require("../index");
+const {parseGradlePropertiesForVersion} = require("../index");
+const {processLibraryNames} = require("../index");
 
-const {Timestamp} = require("firebase-admin/firestore");
+const ERRORS = require("../utils/errors");
+const RELEASE_STATES = require("../releaseStates");
+
 
 describe("validateNewReleases", () => {
   it("should return no errors for valid releases when there are no previous"+
@@ -510,5 +516,140 @@ describe("getReleaseNumbers", () => {
       {releaseName: "notValid123"},
     ];
     expect(() => getReleaseNumbers(invalidData)).to.throw(Error);
+  });
+});
+
+describe("calculateReleaseState", () => {
+  it("should return SCHEDULED if code freeze is more than 2 days away", () => {
+    const now = new Date();
+    const codeFreeze = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+    const release = new Date(codeFreeze.getTime() + 5 * 24 * 60 * 60 * 1000);
+    expect(calculateReleaseState(codeFreeze, release, false))
+        .to.equal(RELEASE_STATES.SCHEDULED);
+  });
+
+  it("should return UPCOMING if code freeze is less than 2 days away", () => {
+    const now = new Date();
+    const codeFreeze = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const release = new Date(codeFreeze.getTime() + 2 * 24 * 60 * 60 * 1000);
+    expect(calculateReleaseState(codeFreeze, release, false))
+        .to.equal(RELEASE_STATES.UPCOMING);
+  });
+
+  it("should throw error if unable to calculate state", () => {
+    const now = new Date();
+    expect(() => calculateReleaseState(now, now, false))
+        .to.throw("Unable to calculate release state");
+  });
+
+  it("should return CODE_FREEZE if code freeze has passed and release " +
+    "date is in future", () => {
+    const now = new Date();
+    const codeFreeze = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+    const release = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    expect(calculateReleaseState(codeFreeze, release, false))
+        .to.equal(RELEASE_STATES.CODE_FREEZE);
+  });
+
+  it("should return RELEASE_DAY if release date is today", () => {
+    const now = new Date();
+    const codeFreeze = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+    const release = new Date(now.setHours(0, 0, 0, 0));
+    expect(calculateReleaseState(codeFreeze, release, false))
+        .to.equal(RELEASE_STATES.RELEASE_DAY);
+  });
+
+  it("should return RELEASED if release date has passed and isComplete " +
+    "is true", () => {
+    const now = new Date();
+    const codeFreeze = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000);
+    const release = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+    expect(calculateReleaseState(codeFreeze, release, true))
+        .to.equal(RELEASE_STATES.RELEASED);
+  });
+
+  it("should return DELAYED if release date has passed and isComplete " +
+    "is false", () => {
+    const now = new Date();
+    const codeFreeze = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000);
+    const release = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+    expect(calculateReleaseState(codeFreeze, release, false))
+        .to.equal(RELEASE_STATES.DELAYED);
+  });
+});
+
+describe("processLibraryNames", () => {
+  it("should remove leading colon from library names", () => {
+    const releaseConfig = {
+      libraries: [":library1", ":library2/ktx", ":library3"],
+    };
+
+    processLibraryNames(releaseConfig);
+
+    expect(releaseConfig.libraries).to.deep.equal(
+        ["library1", "library2/ktx", "library3"],
+    );
+  });
+
+  it("should replace :ktx with /ktx in library names", () => {
+    const releaseConfig = {
+      libraries: ["library1:ktx", "library2:ktx", "library3:ktx"],
+    };
+
+    processLibraryNames(releaseConfig);
+
+    expect(releaseConfig.libraries).to.deep.equal(
+        ["library1/ktx", "library2/ktx", "library3/ktx"],
+    );
+  });
+
+  it("should correctly process a combination of leading colons and :ktx"+
+  " in library names", () => {
+    const releaseConfig = {
+      libraries: [":library1:ktx", ":library2:ktx", ":library3:ktx"],
+    };
+
+    processLibraryNames(releaseConfig);
+
+    expect(releaseConfig.libraries).to.deep.equal(
+        ["library1/ktx", "library2/ktx", "library3/ktx"],
+    );
+  });
+});
+
+describe("parseGradlePropertiesForVersion", () => {
+  it("should ignore commented lines", () => {
+    const gradleProps = "#version=1.2.3\nversion=2.3.4";
+    const version = parseGradlePropertiesForVersion(gradleProps);
+    expect(version).to.equal("2.3.4");
+  });
+
+  it("should handle leading and trailing whitespace", () => {
+    const gradleProps = " \t version = 3.4.5 \t ";
+    const version = parseGradlePropertiesForVersion(gradleProps);
+    expect(version).to.equal("3.4.5");
+  });
+
+  it("should handle case-insensitivity", () => {
+    const gradleProps = "VERSION=4.5.6";
+    const version = parseGradlePropertiesForVersion(gradleProps);
+    expect(version).to.equal("4.5.6");
+  });
+
+  it("should ignore lines without equals sign", () => {
+    const gradleProps = "version\nversion=5.6.7";
+    const version = parseGradlePropertiesForVersion(gradleProps);
+    expect(version).to.equal("5.6.7");
+  });
+
+  it("should handle version numbers with equals sign", () => {
+    const gradleProps = "version=7=8=9";
+    const version = parseGradlePropertiesForVersion(gradleProps);
+    expect(version).to.equal("7=8=9");
+  });
+
+  it("should throw an error when no version is found", () => {
+    const gradleProps = "no version here";
+    expect(() => parseGradlePropertiesForVersion(gradleProps)).to.throw();
   });
 });
