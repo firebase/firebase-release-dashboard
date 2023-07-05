@@ -1000,6 +1000,78 @@ async function syncReleaseState(releaseId, octokit) {
   }
 }
 
+/**
+ * Retrieve all the data for all releases from Firestore, and return
+ * it as an array of release objects. This function is used to fetch
+ * the data for the release dashboard.
+ */
+exports.getReleaseData = functions.https.onRequest(async (req, res) => {
+  const db = admin.firestore();
+
+  try {
+    const releasesSnapshot = await db.collection("releases").get();
+
+    // Prepare to fetch associated data for each release
+    const releasesPromises = releasesSnapshot.docs.map(async (releaseDoc) => {
+      const releaseData = releaseDoc.data();
+
+      // Convert Firestore Timestamps to JavaScript Dates
+      if (releaseData.codeFreezeDate) {
+        releaseData.codeFreezeDate = releaseData.codeFreezeDate.toDate();
+      }
+      if (releaseData.releaseDate) {
+        releaseData.releaseDate = releaseData.releaseDate.toDate();
+      }
+
+      // Fetch all libraries for this release
+      const librariesSnapshot = await db.collection("libraries")
+          .where("releaseID", "==", releaseDoc.id)
+          .get();
+
+      const librariesPromises = librariesSnapshot.docs.map(
+          async (libraryDoc) => {
+            let libraryData = libraryDoc.data(); // get library data
+
+            libraryData = {...libraryData}; // convert to plain object
+
+            // Fetch all changes for this library
+            const changesSnapshot = await db.collection("changes")
+                .where("libraryID", "==", libraryDoc.id)
+                .get();
+
+            libraryData.changes = changesSnapshot.docs.map(
+                (changeDoc) => changeDoc.data(),
+            );
+
+            return libraryData;
+          });
+
+      releaseData.libraries = await Promise.all(librariesPromises);
+
+      // Fetch all checks for this release
+      const checksSnapshot = await db.collection("checks")
+          .where("releaseID", "==", releaseDoc.id)
+          .get();
+
+      releaseData.checks = checksSnapshot.docs.map(
+          (checkDoc) => checkDoc.data(),
+      );
+
+      return releaseData;
+    });
+
+    // Wait for all data fetching to complete
+    const releases = await Promise.all(releasesPromises);
+
+    log("fetched releases", {releases});
+    // Return the complete release data
+    res.status(200).json(releases);
+  } catch (error) {
+    console.error("Failed to get release data:", error);
+    res.status(500).send("Failed to get release data");
+  }
+});
+
 module.exports.validateNewReleases = validateNewReleases;
 module.exports.validateNewReleaseStructure = validateNewReleaseStructure;
 module.exports.convertDatesToTimestamps = convertDatesToTimestamps;
