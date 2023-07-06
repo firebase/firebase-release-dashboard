@@ -1,5 +1,4 @@
 const functions = require("firebase-functions/v2");
-const {defineSecret} = require("firebase-functions/params");
 const admin = require("firebase-admin");
 const {initializeApp} = require("firebase-admin/app");
 initializeApp({
@@ -17,7 +16,6 @@ const ERRORS = require("./utils/errors");
 const RELEASE_STATES = require("./releaseStates");
 
 const {Octokit} = require("@octokit/rest");
-const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
 
 
 /**
@@ -479,7 +477,6 @@ exports.scheduleReleases = functions.https.onRequest(async (req, res) => {
  * with the latest release information from GitHub.
  */
 exports.refreshRelease = functions.https.onRequest(
-    {secrets: [GITHUB_TOKEN]},
     async (req, res) => {
     // Reject non-POST methods
       if (req.method !== "POST") {
@@ -508,7 +505,7 @@ exports.refreshRelease = functions.https.onRequest(
 
       // Attempt to sync the release data with GitHub, and handle any errors
       try {
-        const octokit = new Octokit({auth: GITHUB_TOKEN.value()});
+        const octokit = new Octokit();
         await syncReleaseState(releaseId, octokit);
       } catch (err) {
         error(err);
