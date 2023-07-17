@@ -9,7 +9,6 @@ const {
   error,
 } = require("firebase-functions/logger");
 const {
-  getPreviousReleaseData,
   deleteUpcomingReleases,
   addReleases,
   getReleaseID,
@@ -30,13 +29,10 @@ const {
 } = require("../github/github.js");
 const {validateNewReleases} = require("../validation/validation.js");
 const {
-  convertDatesToTimestamps,
+  convertReleaseDatesToTimestamps,
   processLibraryNames,
   calculateReleaseState,
 } = require("../utils/utils.js");
-const {
-  validateRelease,
-} = require("../validation/validation.js");
 const RELEASE_STATES = require("../utils/releaseStates.js");
 
 
@@ -70,9 +66,8 @@ async function scheduleReleases(req, res) {
     try {
       log("Validating the format of the new upcoming releases",
           {newReleases: newReleases});
-      const previousReleaseData = await getPreviousReleaseData();
       const validationErrors =
-        validateNewReleases(newReleases, previousReleaseData);
+        validateNewReleases(newReleases);
       if (validationErrors.length > 0) {
         // There are errors in the releases, so abort scheduling
         warn("Requests releases did not pass validation checks",
@@ -107,7 +102,7 @@ async function scheduleReleases(req, res) {
       // to be stored in Firestore. We only need to change the string
       // timestamps to Firestore timestamps.
       const releasesWithConvertedDates =
-        convertDatesToTimestamps(newReleases);
+        convertReleaseDatesToTimestamps(newReleases);
 
       await addReleases(releasesWithConvertedDates);
       log("Releases scheduled sucessfully",
@@ -291,7 +286,7 @@ async function getReleases(req, res) {
  * @param {Object} res - The response object to be sent to the client.
  * @return {Promise<void>}
  */
-async function modifyRelease(req, res) {
+async function modifyReleases(req, res) {
   log("Received HTTP Request",
       {
         hostname: req.hostname,
@@ -306,7 +301,7 @@ async function modifyRelease(req, res) {
 
   // TODO: Authenticate the request
 
-  const releaseData = req.body;
+  const releaseData = req.body.releases;
   if (!releaseData) {
     warn("Missing release data in request body",
         {req: req});
@@ -316,48 +311,57 @@ async function modifyRelease(req, res) {
   log("Validating release data", {releaseData: releaseData});
 
   // Verify the format of the release
-  const errors = validateRelease(releaseData);
+  const errors = validateNewReleases(releaseData);
   if (errors.length > 0) {
     warn("request validation errors", {errors: errors});
     return res.status(400).json({errors});
   }
 
-  // Get the release ID of the release to modify
-  let releaseId;
-  try {
-    releaseId = await getReleaseID(releaseData.releaseName);
-  } catch (err) {
-    warn("Error getting release ID", {error: err.message});
-    return res.status(404).send("Release not found");
-  }
-
-  // Update the release data in Firestore
-  try {
-    const releasesWithConvertedDates =
-        convertDatesToTimestamps(releaseData);
-    updateRelease(releaseId, releasesWithConvertedDates);
-    log("Successfully updated release",
-        {releaseId: releaseId, releaseData: releaseData});
-  } catch (err) {
-    warn("Error updating release", {error: err.message});
-    return res.status(500).send("Error updating release");
-  }
-
   const octokit = new Octokit({auth: GITHUB_TOKEN.value()});
 
-  // Since we've successfully updated the release, our
-  // release data is now going to be out of sync with the
-  // new release branch. To make sure that the release data
-  // is up to date, we need to sync the release state.
-  // If there are issues with the new release branch,
-  // the release state will be set to "error".
+  let releasesWithConvertedDates;
   try {
-    await syncReleaseState(releaseId, octokit);
-    log("Successfully updated release and re-synced", {req: req});
+    releasesWithConvertedDates = convertReleaseDatesToTimestamps(releaseData);
   } catch (err) {
-    warn("Error re-syncing release", {error: err.message});
-    return res.status(500).send("Internal Server Error");
+    warn("Error while converting dates to timestamps", {error: err.message});
+    return res.status(400).send("Invalid request");
   }
+
+  for (const release of releasesWithConvertedDates) {
+    // Get the release ID of the release to modify
+    let releaseId;
+    try {
+      releaseId = await getReleaseID(release.releaseName);
+    } catch (err) {
+      warn("Error getting release ID", {error: err.message});
+      return res.status(404).send("Release not found");
+    }
+
+    // Update the release data in Firestore
+    try {
+      await updateRelease(releaseId, release);
+      log("Successfully updated release",
+          {releaseId: releaseId, release: release});
+    } catch (err) {
+      warn("Error updating release", {error: err.message});
+      return res.status(500).send("Error updating release");
+    }
+
+    // Since we've successfully updated the release, our
+    // release data is now going to be out of sync with the
+    // new release branch. To make sure that the release data
+    // is up to date, we need to sync the release state.
+    // If there are issues with the new release branch,
+    // the release state will be set to "error".
+    try {
+      await syncReleaseState(releaseId, octokit);
+      log("Successfully updated release and re-synced", {releaseID: releaseId});
+    } catch (err) {
+      warn("Error re-syncing release", {error: err.message});
+      return res.status(500).send("Internal Server Error");
+    }
+  }
+
 
   return res.status(200).send("OK");
 }
@@ -483,7 +487,7 @@ async function syncReleaseState(releaseId, octokit) {
 
     await updateRelease(releaseId, updatedReleaseData);
   } catch (err) {
-    await updateReleaseState(releaseId, {state: RELEASE_STATES.ERROR});
+    await updateReleaseState(releaseId, RELEASE_STATES.ERROR);
     error("Failed to sync release for a release that has passed code freeze"
         , {releaseId: releaseId, error: err.message});
     throw err;
@@ -494,5 +498,5 @@ module.exports = {
   scheduleReleases,
   refreshRelease,
   getReleases,
-  modifyRelease,
+  modifyReleases,
 };

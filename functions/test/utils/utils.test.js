@@ -1,5 +1,6 @@
 const {
-  convertDatesToTimestamps,
+  convertDateToTimestamp,
+  convertReleaseDatesToTimestamps,
   parseGradlePropertiesForVersion,
   calculateReleaseState,
   processLibraryNames,
@@ -10,7 +11,22 @@ const {expect} = require("chai");
 const {Timestamp} = require("firebase-admin/firestore");
 const sinon = require("sinon");
 
-describe("convertDatesToTimestamps", () => {
+describe("convertDateToTimestamp", () => {
+  it("should correctly convert a date string to a Firestore Timestamp", () => {
+    const dateString = "2023-07-19";
+    const result = convertDateToTimestamp(dateString);
+    expect(result).to.be.an.instanceof(Timestamp);
+  });
+
+  it("should throw an error if date string format is invalid", () => {
+    const dateString = "invalid-date-format";
+    const consoleErrorStub = sinon.stub(console, "error");
+    expect(() => convertDateToTimestamp(dateString)).to.throw();
+    consoleErrorStub.restore();
+  });
+});
+
+describe("convertReleaseDatesToTimestamps", () => {
   it("should correctly convert date strings to Firestore Timestamps", () => {
     const mockReleases = [
       {
@@ -25,29 +41,16 @@ describe("convertDatesToTimestamps", () => {
       },
     ];
 
-    const result = convertDatesToTimestamps(mockReleases);
+    const result = convertReleaseDatesToTimestamps(mockReleases);
 
     result.forEach((release, index) => {
       expect(release).to.have.property("codeFreezeDate");
-      expect(release.codeFreezeDate).to.be.an.instanceof(Timestamp);
+      expect(release.codeFreezeDate).to.be.an
+          .instanceof(Timestamp);
       expect(release).to.have.property("releaseDate");
-      expect(release.releaseDate).to.be.an.instanceof(Timestamp);
+      expect(release.releaseDate).to.be.an
+          .instanceof(Timestamp);
     });
-  });
-
-  it("should throw an error if date string format is invalid", () => {
-    const mockReleases = [
-      {
-        name: "Release 1",
-        codeFreezeDate: "invalid-date-format",
-        releaseDate: "2023-08-19",
-      },
-    ];
-    // Suppress error output, since we don't want to see the exception in tests
-    const consoleErrorStub = sinon.stub(console, "error");
-
-    expect(() => convertDatesToTimestamps(mockReleases)).to.throw();
-    consoleErrorStub.restore();
   });
 
   it("should not convert if date properties are not present", () => {
@@ -57,11 +60,12 @@ describe("convertDatesToTimestamps", () => {
       },
     ];
 
-    const result = convertDatesToTimestamps(mockReleases);
+    const result = convertReleaseDatesToTimestamps(mockReleases);
 
     expect(result[0]).to.deep.equal(mockReleases[0]);
   });
 });
+
 
 describe("calculateReleaseState", () => {
   it("should return SCHEDULED if code freeze is more than 2 days away", () => {

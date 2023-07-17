@@ -4,33 +4,39 @@ const REGEX = require("./regex.js");
 const RELEASE_STATES = require("./releaseStates.js");
 
 /**
+ * Converts a date string into a Firestore Timestamp.
+ *
+ * @param {string} dateString - The date string to convert.
+ * @return {Timestamp} The Firestore Timestamp object.
+ */
+function convertDateToTimestamp(dateString) {
+  try {
+    // Attempt to parse the date string and convert to Firestore Timestamp
+    const dateObject = new Date(dateString);
+    if (!isNaN(dateObject)) {
+      return Timestamp.fromDate(dateObject);
+    } else {
+      error("Invalid date string format", {dateString: dateString});
+      throw new Error(`Invalid date string format: ${dateString}`);
+    }
+  } catch (err) {
+    error("Error converting to Firestore Timestamp", {error: err.message});
+    throw err;
+  }
+}
+
+/**
  * Convert release dates from strings to Firestore Timestamps.
  *
  * @param {Object[]} releases - The releases to convert.
  * @return {Object[]} The releases with converted dates.
  */
-function convertDatesToTimestamps(releases) {
+function convertReleaseDatesToTimestamps(releases) {
   return releases.map((release) => {
     const convertedRelease = {...release};
     ["codeFreezeDate", "releaseDate"].forEach((dateType) => {
       if (release[dateType]) {
-        try {
-          // Attempt to parse the date string and convert to Firestore Timestamp
-          const dateObject = new Date(release[dateType]);
-          if (!isNaN(dateObject)) {
-            convertedRelease[dateType] =
-              Timestamp.fromDate(dateObject);
-          } else {
-            error(`Invalid date string format for ${dateType}:`+`
-              ${release[dateType]}`);
-            throw new Error(`Invalid date string format for`+
-              `${dateType}: ${release[dateType]}`);
-          }
-        } catch (err) {
-          error(`Error converting ${dateType} to Firestore Timestamp:`,
-              {error: err.message});
-          throw err;
-        }
+        convertedRelease[dateType] = convertDateToTimestamp(release[dateType]);
       }
     });
     return convertedRelease;
@@ -134,7 +140,8 @@ function parseCommitTitleFromMessage(message) {
 }
 
 module.exports = {
-  convertDatesToTimestamps,
+  convertDateToTimestamp,
+  convertReleaseDatesToTimestamps,
   parseGradlePropertiesForVersion,
   calculateReleaseState,
   processLibraryNames,

@@ -8,16 +8,16 @@ const {
   scheduleReleases,
   refreshRelease,
   getReleases,
-  modifyRelease,
+  modifyReleases,
 } = require("./handlers/handlers.js");
 const {defineSecret} = require("firebase-functions/params");
 const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
 
 exports.scheduleReleases = functions.https.onRequest(scheduleReleases);
 exports.getReleases = functions.https.onRequest(getReleases);
-exports.modifyRelease = functions.https.onRequest(
+exports.modifyReleases = functions.https.onRequest(
     {secrets: [GITHUB_TOKEN]},
-    modifyRelease);
+    modifyReleases);
 exports.refreshRelease = functions.https.onRequest(
     {secrets: [GITHUB_TOKEN]},
     refreshRelease);

@@ -64,25 +64,6 @@ async function getReleaseData(releaseId) {
   return releaseData;
 }
 
-/** Retrieve all past releases from Firestore. This includes releases that are
- * currently active.
- *
- * @return {Promise<Array>} Returns a promise that resolves to an array
- * of Firestore document data of past releases.
- * @throws {Error} If there is an error in fetching data from Firestore,
- * the promise is rejected with an error.
- */
-async function getPreviousReleaseData() {
-  const today = new Date();
-  const snapshot = await db.collection("releases")
-      .where("releaseDate", "<", today)
-      .get();
-
-  const pastReleases = snapshot.docs.map((doc) => doc.data());
-
-  return pastReleases;
-}
-
 /**
  * Prepare a single release object for storage into Firestore.
  *
@@ -401,7 +382,6 @@ async function updateChecksForRelease(checkRunList, releaseId) {
 }
 
 module.exports = {
-  getPreviousReleaseData,
   addReleases,
   deleteUpcomingReleases,
   getReleaseID,
