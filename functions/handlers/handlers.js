@@ -169,7 +169,14 @@ async function refreshRelease(req, res) {
   }
 
   // Lookup the Firestore document corresponding to the release
-  const releaseId = await getReleaseID(req.body.releaseName);
+  let releaseId;
+  try {
+    releaseId = await getReleaseID(req.body.releaseName);
+  } catch (err) {
+    warn("Error getting release ID", {error: err.message});
+    return res.status(400).send("Invalid Request");
+  }
+
 
   // Attempt to sync the release data with GitHub, and handle any errors
   try {
@@ -334,7 +341,7 @@ async function modifyReleases(req, res) {
       releaseId = await getReleaseID(release.releaseName);
     } catch (err) {
       warn("Error getting release ID", {error: err.message});
-      return res.status(404).send("Release not found");
+      return res.status(400).send("Invalid request");
     }
 
     // Update the release data in Firestore
