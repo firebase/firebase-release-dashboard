@@ -208,9 +208,9 @@ function batchSetLibrariesForRelease(batch, libraries, releaseId) {
  * object, and deletes any existing library versions associated with the
  * release.
  *
- * @param {Object} libraries Object mapping library names to their
- * versions, optedIn and isLockstep flags.
- * @param {string} releaseId The ID of the associated release.
+ * @param {admin.firestore.WriteBatch} libraries The batch to add the
+ * delete operations to.
+ * @param {string} releaseId
  */
 async function updateLibrariesForRelease(libraries, releaseId) {
   const batch = db.batch();
