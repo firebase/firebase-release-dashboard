@@ -164,11 +164,6 @@ async function updateRelease(releaseId, releaseData) {
  * release state is invalid.
  */
 async function updateReleaseState(releaseId, newState) {
-  // Verify that the state is one of the valid states
-  if (!Object.values(RELEASE_STATES).includes(newState)) {
-    throw new Error(`Invalid release state: ${newState}`);
-  }
-
   const releaseDoc = db.collection("releases").doc(releaseId);
   await releaseDoc.update({state: newState});
 }
@@ -178,11 +173,11 @@ async function updateReleaseState(releaseId, newState) {
  * object, and deletes any existing library versions associated with the
  * release.
  *
- * @param {Object} libraryVersions Object mapping library names to their
- * versions.
+ * @param {Object} libraries Object mapping library names to their
+ * versions, optedIn and isLockstep flags.
  * @param {string} releaseId The ID of the associated release.
  */
-async function updateLibrariesForRelease(libraryVersions, releaseId) {
+async function updateLibrariesForRelease(libraries, releaseId) {
   const batch = db.batch();
 
   // Delete all previous library versions for this release
@@ -195,14 +190,17 @@ async function updateLibrariesForRelease(libraryVersions, releaseId) {
   });
 
   // Write each library version to Firestore
-  Object.entries(libraryVersions).forEach(([libraryName, updatedVersion]) => {
-    const docRef = db.collection("libraries").doc();
-    batch.set(docRef, {
-      libraryName,
-      updatedVersion,
-      releaseID: releaseId,
-    });
-  });
+  Object.entries(libraries).forEach(
+      ([libraryName, {updatedVersion, optedIn, isLockstep}]) => {
+        const docRef = db.collection("libraries").doc();
+        batch.set(docRef, {
+          libraryName,
+          updatedVersion,
+          optedIn,
+          isLockstep,
+          releaseID: releaseId,
+        });
+      });
 
   await batch.commit();
 }

@@ -33,7 +33,10 @@ async function getRepositoryContent(octokit, ref, path) {
     const content = Buffer.from(response.data.content, "base64").toString();
     return content;
   } catch (err) {
-    error(`Error fetching ${path} on ${ref} from GitHub:`, {error: err.message});
+    error(
+        `Error fetching ${path} on ${ref} from GitHub:`,
+        {error: err.message},
+    );
     throw err;
   }
 }
@@ -61,7 +64,10 @@ async function listCheckRuns(octokit, ref) {
 
     return checkRuns;
   } catch (err) {
-    error(`Error fetching check suites on ${ref} from GitHub:`, {error: err.message});
+    error(
+        `Error fetching check suites on ${ref} from GitHub:`,
+        {error: err.message},
+    );
     throw err;
   }
 }
@@ -99,17 +105,62 @@ async function getReleaseReport(octokit, releaseData) {
 }
 
 /**
+ * Fetches and returns metadata for each library in the release configuration.
+ * The metadata includes the updated version, whether the library is opted in
+ * to the release, and whether the library is lockstep. A library is lockstep
+ * if it is part of the release but has no changes. A library is opted in if
+ * it was not originally part of the release report, but has been manually opted
+ * in by being added to the release configuration.
+ *
+ * @param {Octokit} octokit - The authenticated Octokit client.
+ * @param {string} releaseBranchName - The release branch name
+ * @param {Object} releaseReport - The release report
+ * @param {Object} releaseConfig - The release configuration with the processed
+ * library names.
+ * @return {Promise<Object>} A promise that resolves to an object mapping
+ * library names to metadata.
+ */
+async function getLibraryMetadata(
+    octokit,
+    releaseBranchName,
+    releaseReport,
+    releaseConfig,
+) {
+  const libraryMetadata = {};
+  const libraryVersions = await getLibraryVersions(
+      octokit,
+      releaseBranchName,
+      releaseConfig,
+  );
+  log("Fetched library versions", {libraryVersions: libraryVersions});
+
+  for (const library in libraryVersions) {
+    if (Object.prototype.hasOwnProperty.call(libraryVersions, library)) {
+      libraryMetadata[library] = {
+        "updatedVersion": libraryVersions[library],
+        "optedIn": !releaseReport.changesByLibraryName[library],
+        "isLockstep": !releaseReport.changesByLibraryName[library] ||
+        releaseReport.changesByLibraryName[library].length === 0,
+      };
+    }
+  }
+
+  log("Library metadata", {libraryMetadata: libraryMetadata});
+  return libraryMetadata;
+}
+
+/**
  * Extracts the version for each library in the release configuration from the
  * repository and stores them in an object.
  *
  * @param {Octokit} octokit The authenticated Octokit client.
- * @param {Object} releaseData The release data containing the branch name.
+ * @param {Object} releaseBranchName The release branch name.
  * @param {Object} releaseConfig The release configuration with the processed
  * library names.
  * @return {Promise<Object>} A promise that resolves to an object mapping
  * library names to versions.
  */
-async function getLibraryVersions(octokit, releaseData, releaseConfig) {
+async function getLibraryVersions(octokit, releaseBranchName, releaseConfig) {
   const libraryVersions = {};
 
   // Fetch and parse all library versions from grade properties files
@@ -120,7 +171,7 @@ async function getLibraryVersions(octokit, releaseData, releaseConfig) {
         library.replace("/ktx", "") : library;
 
     const gradleProperties = await getRepositoryContent(
-        octokit, releaseData.releaseBranchName,
+        octokit, releaseBranchName,
         `${gradleDir}/gradle.properties`,
     );
     const version = parseGradlePropertiesForVersion(gradleProperties);
@@ -200,7 +251,7 @@ module.exports = {
   listCheckRuns,
   getReleaseConfig,
   getReleaseReport,
-  getLibraryVersions,
+  getLibraryMetadata,
   checkReleaseBranchExists,
   getBuildArtifactsWorkflow,
   REPO_URL,

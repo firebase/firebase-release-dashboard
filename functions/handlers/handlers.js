@@ -26,7 +26,7 @@ const {
   getReleaseReport,
   getBuildArtifactsWorkflow,
   listCheckRuns,
-  getLibraryVersions,
+  getLibraryMetadata,
 } = require("../github/github.js");
 const {validateNewReleases} = require("../validation/validation.js");
 const {
@@ -435,8 +435,12 @@ async function syncReleaseState(releaseId, octokit) {
     processLibraryNames(releaseConfig);
 
     // For each library in the release config, extract the version
-    const libraryVersions = await getLibraryVersions(
-        octokit, releaseData, releaseConfig);
+    const libraryMetadata = await getLibraryMetadata(
+        octokit,
+        releaseData.releaseBranchName,
+        releaseReport,
+        releaseConfig,
+    );
 
     // Get the status of the check suite running on the release branch
     const checkRuns = await listCheckRuns(octokit,
@@ -451,13 +455,9 @@ async function syncReleaseState(releaseId, octokit) {
       httpsUrl: checkRun.html_url,
     }));
 
-    // TODO: Determine which libraries were manually opted in to the release
-    // and which ones were automatically included using diffs between the
-    // release report and the release config. Add flag to opted in libraries.
-
     // Update release data in parallel
     await Promise.all([
-      updateLibrariesForRelease(libraryVersions, releaseId),
+      updateLibrariesForRelease(libraryMetadata, releaseId),
       updateChecksForRelease(checkRunList, releaseId),
     ]);
 
