@@ -149,7 +149,9 @@ async function addReleases(newReleases) {
 }
 /**
  * Delete the releases in Firestore with code freeze dates that are in the
- * future. This is intented to be used when scheduling new upcoming releases,
+ * future.
+ *
+ * This is intented to be used when scheduling new upcoming releases,
  * but we need to delete the old upcoming releases before.
  */
 async function deleteUpcomingReleases() {
