@@ -26,16 +26,17 @@ function isValidDate(dateString) {
   return !isNaN(date.getTime());
 }
 
+
 /**
- * Validates that a release object is in a valid form.
+ * Validates that the release name is in the correct format.
  *
  * @param {Object} release - The release to validate.
- * @return {Array} errors - A list of errors from the validation of the release.
+ * @return {Array} errors - A list of errors from the validation of the release
+ * name.
  */
-function validateRelease(release) {
+function validateReleaseName(release) {
   const errors = [];
 
-  // Validate that the release name exists and is valid
   if (!release.releaseName) {
     errors.push({
       message: ERRORS.MISSING_RELEASE_FIELD,
@@ -54,22 +55,45 @@ function validateRelease(release) {
     });
   }
 
-  // Check that the release operator exists
+  return errors;
+}
+
+/**
+ * Validates that the release operator is in the correct format.
+ *
+ * @param {Object} release - The release to validate.
+ * @return {Array} errors - A list of errors from the validation of the release
+ * operator.
+ */
+function validateReleaseOperator(release) {
+  const errors = [];
+
   if (!release.releaseOperator) {
     errors.push({
       message: ERRORS.MISSING_RELEASE_FIELD,
       offendingRelease: release,
     });
   } else if (typeof release.releaseOperator !== "string" ||
-        release.releaseOperator.trim() === "") {
+          release.releaseOperator.trim() === "") {
     errors.push({
       message: ERRORS.INVALID_RELEASE_FIELD,
       offendingRelease: release,
     });
   }
 
-  // Check that the dates exists, are valid date strings, and in the correct
-  // order
+  return errors;
+}
+
+/**
+ * Validates that the release dates are in the correct order.
+ *
+ * @param {Object} release - The release to validate.
+ * @return {Array} errors - A list of errors from the validation of the release
+ * dates.
+ */
+function validateReleaseDates(release) {
+  const errors = [];
+
   if (!release.codeFreezeDate || !release.releaseDate) {
     errors.push({
       message: ERRORS.MISSING_RELEASE_FIELD,
@@ -90,6 +114,20 @@ function validateRelease(release) {
   }
 
   return errors;
+}
+
+/**
+ * Validates that a release object is in a valid form.
+ *
+ * @param {Object} release - The release to validate.
+ * @return {Array} errors - A list of errors from the validation of the release.
+ */
+function validateRelease(release) {
+  const releaseNameErrors = validateReleaseName(release);
+  const operatorErrors = validateReleaseOperator(release);
+  const dateErrors = validateReleaseDates(release);
+
+  return [...releaseNameErrors, ...operatorErrors, ...dateErrors];
 }
 
 /** Validation checks for a set of upcoming releases. This function is only

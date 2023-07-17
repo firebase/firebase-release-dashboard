@@ -24,13 +24,18 @@ async function getReleaseID(releaseName) {
       .get();
 
   if (releaseSnapshot.empty) {
-    throw new Error(`No release found with name: ${releaseName}`);
+    throw new Error(`
+      There should only be one release with a given name,
+      instead we found ${releaseSnapshot.size} releases with name:
+      ${releaseName}
+    `);
   }
 
-  // There should only be one release with a given name
   if (releaseSnapshot.size > 1) {
-    throw new Error(`${releaseSnapshot.size} releases found with name:
-     ${releaseName}`);
+    throw new Error(`
+      ${releaseSnapshot.size} releases found with name:
+      ${releaseName}
+    `);
   }
 
   const releaseId = releaseSnapshot.docs[0].id;
@@ -42,6 +47,7 @@ async function getReleaseID(releaseName) {
  * Retrieves release data from the database given a release ID.
  *
  * @param {string} releaseId The ID of the release to fetch.
+ * @throws {Error} If there is no release with the given ID.
  * @return {Promise<Object>} A promise that resolves to the release data.
  */
 async function getReleaseData(releaseId) {
@@ -90,7 +96,6 @@ async function getPreviousReleaseData() {
  * @param {Object} newReleases - Releases to store in Firestore
  */
 async function addReleases(newReleases) {
-  // Validate the structure of the new releases before we store
   validateNewReleaseStructure(newReleases);
 
   const batch = db.batch();
@@ -124,10 +129,10 @@ async function addReleases(newReleases) {
 }
 
 /**
-   * Delete the releases in Firestore with code freeze dates that are in the
-   * future. This is intented to be used when scheduling new upcoming releases,
-   * but we need to delete the old upcoming releases before.
-   */
+ * Delete the releases in Firestore with code freeze dates that are in the
+ * future. This is intented to be used when scheduling new upcoming releases,
+ * but we need to delete the old upcoming releases before.
+ */
 async function deleteUpcomingReleases() {
   const today = Timestamp.now();
   const releasesRef = db.collection("releases");
@@ -143,14 +148,15 @@ async function deleteUpcomingReleases() {
 }
 
 /**
-   * Update a release in Firestore.
-   *
-   * @param {string} releaseId The ID of the release to update.
-   * @param {string} releaseData The new data to set for the release.
-   * @throws {Error} If the release state update fails.
-   */
+ * Update a release in Firestore.
+ *
+ * @param {string} releaseId The ID of the release to update.
+ * @param {string} releaseData The new data to set for the release.
+ * @throws {Error} If the release state update fails.
+ */
 async function updateRelease(releaseId, releaseData) {
   validateRelease(releaseData);
+
   const releaseDoc = db.collection("releases").doc(releaseId);
   await releaseDoc.update(releaseData);
 }
