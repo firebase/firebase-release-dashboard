@@ -15,14 +15,12 @@ describe("convertDateToTimestamp", () => {
   it("should correctly convert a date string to a Firestore Timestamp", () => {
     const dateString = "2023-07-19";
     const result = convertDateToTimestamp(dateString);
-
     expect(result).to.be.an.instanceof(Timestamp);
   });
 
   it("should throw an error if date string format is invalid", () => {
     const dateString = "invalid-date-format";
     const consoleErrorStub = sinon.stub(console, "error");
-
     expect(() => convertDateToTimestamp(dateString)).to.throw();
     consoleErrorStub.restore();
   });
@@ -67,6 +65,7 @@ describe("convertReleaseDatesToTimestamps", () => {
     expect(result[0]).to.deep.equal(mockReleases[0]);
   });
 });
+
 
 describe("calculateReleaseState", () => {
   it("should return SCHEDULED if code freeze is more than 2 days away", () => {
