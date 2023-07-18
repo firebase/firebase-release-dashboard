@@ -15,8 +15,9 @@ const {REPO_URL} = require("../github/github.js");
  *
  * @param {string} releaseName The release name of the release
  * document to fetch.
- * @throws {Error} If there is not exactly one release with the given name.
- * @return {Promise<string>} A promise that resolves to the release ID.
+ * @throws {Error} If there is more than one release with a given name.
+ * @return {Promise<string|null>} A promise that resolves to the release ID,
+ * or null if no release was found.
  */
 async function getReleaseID(releaseName) {
   const releaseSnapshot = await db.collection("releases")
@@ -24,18 +25,14 @@ async function getReleaseID(releaseName) {
       .get();
 
   if (releaseSnapshot.empty) {
-    throw new Error(`
-      There should only be one release with a given name,
-      instead we found ${releaseSnapshot.size} releases with name:
-      ${releaseName}
-    `);
+    return null;
   }
 
   if (releaseSnapshot.size > 1) {
-    throw new Error(`
-      ${releaseSnapshot.size} releases found with name:
-      ${releaseName}
-    `);
+    throw new Error(
+        `There should be at most one release with name: ${releaseName},
+      instead ${releaseSnapshot.size} were releases found.`,
+    );
   }
 
   const releaseId = releaseSnapshot.docs[0].id;
@@ -119,7 +116,7 @@ function batchSetRelease(batch, release) {
  *
  * @param {Object} newReleases - Releases to store in Firestore
  */
-async function addReleases(newReleases) {
+async function setReleases(newReleases) {
   validateNewReleaseStructure(newReleases);
 
   const batch = db.batch();
@@ -382,7 +379,7 @@ async function updateChecksForRelease(checkRunList, releaseId) {
 }
 
 module.exports = {
-  addReleases,
+  setReleases,
   deleteUpcomingReleases,
   getReleaseID,
   updateRelease,

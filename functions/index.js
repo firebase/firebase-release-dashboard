@@ -5,7 +5,7 @@ initializeApp({
   credential: admin.credential.applicationDefault(),
 });
 const {
-  scheduleReleases,
+  addReleases,
   refreshRelease,
   getReleases,
   modifyReleases,
@@ -13,7 +13,9 @@ const {
 const {defineSecret} = require("firebase-functions/params");
 const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
 
-exports.scheduleReleases = functions.https.onRequest(scheduleReleases);
+exports.addReleases = functions.https.onRequest(
+    {secrets: [GITHUB_TOKEN]},
+    addReleases);
 exports.getReleases = functions.https.onRequest(getReleases);
 exports.modifyReleases = functions.https.onRequest(
     {secrets: [GITHUB_TOKEN]},

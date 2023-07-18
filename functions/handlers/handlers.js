@@ -9,8 +9,7 @@ const {
   error,
 } = require("firebase-functions/logger");
 const {
-  deleteUpcomingReleases,
-  addReleases,
+  setReleases,
   getReleaseID,
   updateRelease,
   updateReleaseState,
@@ -37,22 +36,24 @@ const RELEASE_STATES = require("../utils/releaseStates.js");
 
 
 /**
- * Schedule new Firebase Android SDK releases.
- * This function overwrites the previous upcoming releases and replaces them
- * with the new ones. To avoid removing unmodified releases, keep them in the
- * request so that they are added back.
+ * Add new Firebase Android SDK releases.
+ *
+ * This function is used to add upcoming or previous releases to the database.
+ * Based on the release dates, the release state will be inferred and set
+ * automatically, and then the release will be synced.
+ *
  * @param {Object} req - The request from the client.
  * @param {Object} res - The response object to be sent to the client.
  * @return {Promise<void>}
  */
-async function scheduleReleases(req, res) {
-  // Verify method
+async function addReleases(req, res) {
   log("Received HTTP Request",
       {
         hostname: req.hostname,
         method: req.method,
         body: req.body,
       });
+
   if (req.method != "POST") {
     warn("Invalid method", {req: req});
     res.status(405).send("Method Not Allowed");
@@ -60,79 +61,120 @@ async function scheduleReleases(req, res) {
 
   // TODO: Authenticate request
 
+  const releaseData = req.body.releases;
+  if (!releaseData) {
+    warn("Missing release data in request body", {req: req});
+    return res.status(400).send("Invalid Request");
+  }
+
+  // Validate the format of the releases, and return meaningful errors
+  // if there are any
   try {
-    // Verify the format of the releases
-    const newReleases = req.body.releases;
-    try {
-      log("Validating the format of the new upcoming releases",
-          {newReleases: newReleases});
-      const validationErrors =
-        validateNewReleases(newReleases);
-      if (validationErrors.length > 0) {
-        // There are errors in the releases, so abort scheduling
-        warn("Requests releases did not pass validation checks",
-            {
-              hostname: req.hostname,
-              status: 400,
-              errors: validationErrors,
-            });
-        return res.status(400).json({errors: validationErrors});
-      }
-    } catch (err) {
-      error("Failed to retrieve previous release data", {
-        hostname: req.hostname,
-        status: 500,
-        error: err.message,
-        body: req.body,
-        headers: req.headers,
-      });
-      return res.status(500).send("Internal Server Error");
-    }
-
-
-    // Delete all upcoming releases from Firestore
-    // We have to wait for this function, otherwise it is possible
-    // to write the new upcoming releases before we delete the old upcoming
-    // releases, resulting in just deleting the new upcoming releases as well.
-    await deleteUpcomingReleases();
-
-    // Write the updated upcoming releases to Firestore
-    try {
-      // Convert the new releases JSON to a format that is able
-      // to be stored in Firestore. We only need to change the string
-      // timestamps to Firestore timestamps.
-      const releasesWithConvertedDates =
-        convertReleaseDatesToTimestamps(newReleases);
-
-      await addReleases(releasesWithConvertedDates);
-      log("Releases scheduled sucessfully",
-          {
-            hostname: req.hostname,
-            releases: req.body,
-            status: 200,
-          });
-      return res.status(200).send("OK");
-    } catch (err) {
-      error("Failed to schedule releases in Firestore",
-          {
-            hostname: req.hostname,
-            status: 500,
-            error: err.message.message,
-            body: req.body,
-          });
-      return res.status(500).send("Internal Server Error");
+    const validationErrors = validateNewReleases(releaseData);
+    if (validationErrors.length > 0) {
+      warn("Request releases did not pass validation checks",
+          {errors: validationErrors});
+      return res.status(400).json({errors: validationErrors});
     }
   } catch (err) {
-    warn("Unauthorized request",
+    error("Failed to validate release data", {error: err.message});
+    return res.status(500).send("Internal Server Error");
+  }
+
+  // Validate that none of the releases already exist in Firestore
+  try {
+    for (const release of releaseData) {
+      const releaseId = await getReleaseID(release.releaseName);
+      if (releaseId) {
+        warn("Release already exists in Firestore",
+            {
+              release: release,
+              releaseID: releaseId,
+            });
+        return res.status(400).send(
+            `Invalid Request - ${release.releaseName} already exists`,
+        );
+      }
+    }
+  } catch (err) {
+    error("Error while verifying uniqueness of release names",
+        {error: err.message});
+    return res.status(500).send("Internal Server Error");
+  }
+
+  // Convert the new releases JSON to a format that is able
+  // to be stored in Firestore. We only need to change the string
+  // timestamps to Firestore timestamps.
+  let releasesWithConvertedDates;
+  try {
+    releasesWithConvertedDates = convertReleaseDatesToTimestamps(releaseData);
+  } catch (err) {
+    error("Error while converting dates to timestamps", {error: err.message});
+    return res.status(500).send("Internal Server Error");
+  }
+
+  // Write the new releases to Firestore
+  try {
+    await setReleases(releasesWithConvertedDates);
+    log("Releases added sucessfully",
         {
           hostname: req.hostname,
-          status: 403,
-          error: err.message,
-          body: req.body,
-          headers: req.headers,
+          releases: req.body,
+          status: 200,
         });
-    return res.status(403).send("Unauthorized");
+  } catch (err) {
+    error("Failed to store releases in Firestore",
+        {
+          hostname: req.hostname,
+          status: 500,
+          error: err.message.message,
+          body: req.body,
+        });
+    return res.status(500).send("Internal Server Error");
   }
+
+  let octokit;
+  try {
+    octokit = new Octokit({auth: GITHUB_TOKEN.value()});
+  } catch (err) {
+    error("Failed to create Octokit instance", {error: err.message});
+    return res.status(500).send("Internal Server Error");
+  }
+
+  // Sync the release state for each release
+  // Since the release names are unique, we can safely sync
+  // each release in parallel.
+
+  const promises = releasesWithConvertedDates.map(async (release) => {
+    try {
+      const releaseId = await getReleaseID(release.releaseName);
+      if (!releaseId) {
+        error("Failed to get release ID for new release", {release: release});
+        return Promise.reject(new Error("Failed to get release ID"));
+      }
+      await syncReleaseState(releaseId, octokit);
+    } catch (err) {
+      warn("Failed to sync release state for new release",
+          {
+            error: err.message,
+            release: release,
+          });
+    }
+  });
+
+  // Even if one of the syncs fails, we still want to return a 200.
+  // Since these releases were validated, we assume that the releases
+  // failed to sync for a reason that is not the client's fault.
+  // If the sync fails for a reason that is the client's fault, then
+  // we leave it to the client to correctly identify why it failed, modify
+  // the release, and retry the sync. Reasons for failure include: incorrect
+  // branch naming, creating a release that does not have a valid branch (e.g.
+  // no release config, release report, etc...), or inaccurate dates.
+  // The releases that failed to sync will simply be in an error state,
+  // and the client can retry the sync later.
+  await Promise.all(promises);
+
+  return res.status(200).send("OK");
 }
 
 /**
@@ -172,6 +214,11 @@ async function refreshRelease(req, res) {
   let releaseId;
   try {
     releaseId = await getReleaseID(req.body.releaseName);
+    if (!releaseId) {
+      warn("Release not found in Firestore",
+          {releaseName: req.body.releaseName});
+      return res.status(400).send("Invalid Request");
+    }
   } catch (err) {
     warn("Error getting release ID", {error: err.message});
     return res.status(400).send("Invalid Request");
@@ -339,6 +386,10 @@ async function modifyReleases(req, res) {
     let releaseId;
     try {
       releaseId = await getReleaseID(release.releaseName);
+      if (!releaseId) {
+        warn("Release not found in Firestore", {release: release});
+        return res.status(400).send("Invalid Request");
+      }
     } catch (err) {
       warn("Error getting release ID", {error: err.message});
       return res.status(400).send("Invalid request");
@@ -393,7 +444,7 @@ async function syncReleaseState(releaseId, octokit) {
   log("Release data before sync", {releaseData: releaseData});
 
   // Infer the state of the release from the collected data
-  let releaseState = calculateReleaseState(
+  const releaseState = calculateReleaseState(
       releaseData.codeFreezeDate.toDate(),
       releaseData.releaseDate.toDate(),
       releaseData.isComplete);
@@ -414,11 +465,16 @@ async function syncReleaseState(releaseId, octokit) {
       releaseData.releaseBranchName,
   );
 
+  // If release release has passed the codeFreezeDate but the release
+  // branch does not exist, we can't proceed with syncing the release.
+  // The release branch should exist at this point, so we enter an
+  // error state.
   if (!releaseBranchExists) {
     log("Release branch does not exist", {releaseData: releaseData});
-    releaseState = RELEASE_STATES.UPCOMING;
-    await updateReleaseState(releaseId, releaseState);
-    throw new Error("Release branch does not exist");
+    await updateReleaseState(releaseId, RELEASE_STATES.ERROR);
+    throw new Error(
+        `Release branch ${releaseData.releaseBranchName} does not exist`,
+    );
   }
 
   // Since the release branch exists, we can fetch data from GitHub
@@ -502,7 +558,7 @@ async function syncReleaseState(releaseId, octokit) {
 }
 
 module.exports = {
-  scheduleReleases,
+  addReleases,
   refreshRelease,
   getReleases,
   modifyReleases,

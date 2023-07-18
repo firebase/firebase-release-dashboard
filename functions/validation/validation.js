@@ -117,6 +117,30 @@ function validateReleaseDates(release) {
 }
 
 /**
+ * Check if all release names are unique. This function is not responsible for
+ * checking if these releases already exist in the database, only for checking
+ * that the release names are unique within the set of releases to be scheduled.
+ *
+ * This function assumes that the release names have already been validated.
+ *
+ * @param {Object} releases - The releases to validate.
+ * @return {Array} An array of error messages
+ */
+function validateUniqueReleaseNames(releases) {
+  const errors = [];
+  const releaseNames = releases.map((release) => release.releaseName);
+  const uniqueReleaseNames = new Set(releaseNames);
+
+  if (uniqueReleaseNames.size !== releaseNames.length) {
+    errors.push({
+      message: ERRORS.DUPLICATE_RELEASE_NAMES,
+    });
+  }
+
+  return errors;
+}
+
+/**
  * Validates that a release object is in a valid form.
  *
  * @param {Object} release - The release to validate.
@@ -140,17 +164,20 @@ function validateRelease(release) {
 function validateNewReleases(newReleases) {
   const errors = [];
 
-  // Validate that there are releases
-  if (!newReleases) {
+  if (newReleases) {
+    for (const release of newReleases) {
+      const releaseErrors = validateRelease(release);
+      errors.push(...releaseErrors);
+    }
+
+    if (errors.length === 0) {
+      const uniqueReleaseNameErrors = validateUniqueReleaseNames(newReleases);
+      errors.push(...uniqueReleaseNameErrors);
+    }
+  } else {
     errors.push({
       message: ERRORS.NO_RELEASES,
     });
-    return errors;
-  }
-
-  for (const release of newReleases) {
-    const releaseErrors = validateRelease(release);
-    errors.push(...releaseErrors);
   }
 
   return errors;

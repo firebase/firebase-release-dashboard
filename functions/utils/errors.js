@@ -10,6 +10,7 @@ const ERRORS = {
   "previous release number",
   INVALID_DATE: "There is a date that is invalid",
   RELEASE_OVERLAP: "There are releases with overlapping dates",
+  DUPLICATE_RELEASE_NAMES: "There are releases with duplicate names",
 };
 
 module.exports = ERRORS;

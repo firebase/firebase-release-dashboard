@@ -215,6 +215,28 @@ describe("validateNewReleases", () => {
 
     expect(errors).to.deep.include(expectedErrors);
   });
+
+  it("should return an error for duplicate release names", async () => {
+    const newReleases = [
+      {
+        releaseName: "M103",
+        releaseOperator: "operator1",
+        codeFreezeDate: "2123-06-30",
+        releaseDate: "2123-07-07",
+      },
+      {
+        releaseName: "M103",
+        releaseOperator: "operator1",
+        codeFreezeDate: "2123-06-30",
+        releaseDate: "2123-07-07",
+      },
+    ];
+    const errors = validateNewReleases(newReleases);
+    const expectedErrors = {
+      message: ERRORS.DUPLICATE_RELEASE_NAMES,
+    };
+    expect(errors).to.deep.include(expectedErrors);
+  });
 });
 
 describe("isValidDate", () => {
