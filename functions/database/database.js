@@ -3,7 +3,7 @@ const db = admin.firestore();
 const {Timestamp} = require("firebase-admin/firestore");
 const RELEASE_STATES = require("../utils/releaseStates.js");
 const {
-  validateNewReleaseStructure,
+  validateNewReleasesStructure,
   validateRelease,
 } = require("../validation/validation.js");
 const {parseCommitTitleFromMessage} = require("../utils/utils.js");
@@ -94,6 +94,10 @@ function releaseToFirestoreObject(release) {
 /**
  * Set a release object into Firestore batch for further processing.
  *
+ *
+ * Note that this will not commit the change, it merely adds it to
+ * the given batch.
+ *
  * @param {admin.firestore.WriteBatch} batch - The Firestore batch instance
  * @param {Object} release - A release object
  */
@@ -104,9 +108,10 @@ function batchSetRelease(batch, release) {
 }
 
 /**
- * Write new releases to Firestore. This function assumes that the contents
- * of the releases are validated. newReleases is an array of release objects
- * that have the following structure:
+ * Write new releases to Firestore.
+ *
+ * Assumes that the contents of the releases are validated. newReleases is
+ * an array of release objects that have the following structure:
  * {
  *   releaseName: string,
  *   releaseOperator: string,
@@ -117,7 +122,7 @@ function batchSetRelease(batch, release) {
  * @param {Object} newReleases - Releases to store in Firestore
  */
 async function setReleases(newReleases) {
-  validateNewReleaseStructure(newReleases);
+  validateNewReleasesStructure(newReleases);
 
   const batch = db.batch();
 
@@ -176,6 +181,9 @@ async function updateReleaseState(releaseId, newState) {
 /**
  * Deletes all existing library documents associated with a release.
  *
+ * Note that this will not commit the change, it merely adds it to
+ * the given batch.
+ *
  * @param {admin.firestore.WriteBatch} batch The batch to add the
  * delete operations to.
  * @param {string} releaseId
@@ -192,6 +200,9 @@ async function batchDeleteReleaseLibraries(batch, releaseId) {
 
 /**
  * Adds new library release documents to Firestore batch.
+ *
+ * Note that this will not commit the change, it merely adds it to
+ * the given batch.
  *
  * @param {admin.firestore.WriteBatch} batch The batch to add the
  * set operations to.
@@ -255,6 +266,9 @@ async function getLibraryId(libraryName) {
 /**
  * Deletes all existing change documents associated with a release.
  *
+ * Note that this will not commit the change, it merely adds it to
+ * the given batch.
+ *
  * @param {admin.firestore.WriteBatch} batch The batch to add the
  * delete operations to.
  * @param {string} releaseId The ID of the associated release.
@@ -271,6 +285,9 @@ async function batchDeleteReleaseChanges(batch, releaseId) {
 
 /**
  * Creates new change documents for a library and release.
+ *
+ * Note that this will not commit the change, it merely adds it to
+ * the given batch.
  *
  * @param {admin.firestore.WriteBatch} batch The batch to add the
  * delete operations to.
@@ -300,7 +317,8 @@ function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
  * deletes any existing changes associated with the release.
  *
  * @param {Object} releaseReport The release report containing changes by
- * library name.
+ * library name. The structure of the releas report can be found at
+ * https://github.com/firebase/firebase-android-sdk/pull/5077#issuecomment-1591661163
  * @param {string} releaseId The ID of the associated release.
  * @throws {Error} If a library in the release report does not exist in
  * Firestore.
@@ -310,13 +328,12 @@ async function updateChangesForRelease(releaseReport, releaseId) {
 
   await batchDeleteReleaseChanges(batch, releaseId);
 
-  const changePromises = Object.entries(releaseReport.changesByLibraryName)
-      .map(async ([libraryName, changes]) => {
-        const libraryId = await getLibraryId(libraryName);
-        batchSetReleaseChanges(batch, changes, libraryId, releaseId);
-      });
-
-  await Promise.all(changePromises);
+  const libraryNames = Object.keys(releaseReport.changesByLibraryName);
+  for (const libraryName of libraryNames) {
+    const changes = releaseReport.changesByLibraryName[libraryName];
+    const libraryId = await getLibraryId(libraryName);
+    batchSetReleaseChanges(batch, changes, libraryId, releaseId);
+  }
 
   await batch.commit();
 }
@@ -324,6 +341,9 @@ async function updateChangesForRelease(releaseReport, releaseId) {
 
 /**
  * Deletes all existing check documents associated with a release.
+ *
+ * Note that this will not commit the change, it merely adds it to
+ * the given batch.
  *
  * @param {admin.firestore.WriteBatch} batch The batch to add the
  * delete operations to.
@@ -341,6 +361,9 @@ async function batchDeleteReleaseChecks(batch, releaseId) {
 
 /**
  * Adds new check documents to Firestore batch.
+ *
+ * Note that this will not commit the change, it merely adds it to
+ * the given batch.
  *
  * @param {admin.firestore.WriteBatch} batch The batch to add the
  * set operations to.

@@ -120,7 +120,7 @@ function parseGradlePropertiesForVersion(gradlePropertiesContent) {
 
 /**
  * Change messages that are retrieved from release reports are the exact
- * commit messages in the GitHub master branch. This function parses the
+ * commit messages in the GitHub master branch. Parses the
  * commit message to extract the title of the commit, which is the first line
  * of the commit message, before the pull request number.
  *

@@ -2,7 +2,7 @@ const chai = require("chai");
 const expect = chai.expect;
 const {
   validateNewReleases,
-  validateNewReleaseStructure,
+  validateNewReleasesStructure,
   isValidDate,
   isValidReleaseName,
 } = require("../../validation/validation.js");
@@ -259,16 +259,16 @@ describe("isValidDate", () => {
   });
 });
 
-describe("validateNewReleaseStructure", () => {
+describe("validateNewReleasesStructure", () => {
   it("should throw an error if newReleases is not an array", () => {
     const newReleases = "not an array";
-    expect(() => validateNewReleaseStructure(newReleases))
+    expect(() => validateNewReleasesStructure(newReleases))
         .to.throw("New releases should be an array");
   });
 
   it("should throw an error if a release is not an object", () => {
     const newReleases = ["not an object"];
-    expect(() => validateNewReleaseStructure(newReleases)).
+    expect(() => validateNewReleasesStructure(newReleases)).
         to.throw("Each release should be an object");
   });
 
@@ -279,7 +279,7 @@ describe("validateNewReleaseStructure", () => {
       codeFreezeDate: Timestamp.now(),
       // missing release date
     }];
-    expect(() => validateNewReleaseStructure(newReleases)).
+    expect(() => validateNewReleasesStructure(newReleases)).
         to.throw("Each release should have a Firestore Timestamp"+
           " property 'releaseDate'");
   });
@@ -291,7 +291,7 @@ describe("validateNewReleaseStructure", () => {
       codeFreezeDate: Timestamp.now(),
       releaseDate: "not a timestamp",
     }];
-    expect(() => validateNewReleaseStructure(newReleases)).
+    expect(() => validateNewReleasesStructure(newReleases)).
         to.throw("Each release should have a Firestore Timestamp"+
           " property 'releaseDate'");
   });
@@ -303,6 +303,6 @@ describe("validateNewReleaseStructure", () => {
       codeFreezeDate: Timestamp.now(),
       releaseDate: Timestamp.now(),
     }];
-    expect(() => validateNewReleaseStructure(newReleases)).to.not.throw();
+    expect(() => validateNewReleasesStructure(newReleases)).to.not.throw();
   });
 });

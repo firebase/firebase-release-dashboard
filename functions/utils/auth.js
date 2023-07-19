@@ -5,7 +5,8 @@ const {
 } = require("firebase-functions/logger");
 
 /**
-  * This function is used to authenticate the user.
+  * Validates header of the request to ensure that the request is coming from
+  * an authenticated user in Firebase Auth.
   *
   * @param {Object} req - The request from the client.
   * @param {Object} res - The response object to be sent to the client.

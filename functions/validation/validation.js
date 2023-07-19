@@ -117,11 +117,11 @@ function validateReleaseDates(release) {
 }
 
 /**
- * Check if all release names are unique. This function is not responsible for
+ * Check if all release names are unique. Note that this is not responsible for
  * checking if these releases already exist in the database, only for checking
  * that the release names are unique within the set of releases to be scheduled.
  *
- * This function assumes that the release names have already been validated.
+ * Assumes that the release names have already been validated.
  *
  * @param {Object} releases - The releases to validate.
  * @return {Array} An array of error messages
@@ -154,13 +154,14 @@ function validateRelease(release) {
   return [...releaseNameErrors, ...operatorErrors, ...dateErrors];
 }
 
-/** Validation checks for a set of upcoming releases. This function is only
-   * intended to be used to validate releases that are to be scheduled, and not
-   * already existing releases.
-   *
-   * @param {Object} newReleases - A set of upcoming releases to be validated
-   * @return {Object} list of errors from the validation of the releases.
-   */
+/**
+ * Validation checks for a set of upcoming releases. This function is only
+ * intended to be used to validate releases that are to be scheduled, and not
+ * already existing releases.
+ *
+ * @param {Object} newReleases - A set of upcoming releases to be validated
+ * @return {Object} list of errors from the validation of the releases.
+ */
 function validateNewReleases(newReleases) {
   const errors = [];
 
@@ -184,48 +185,55 @@ function validateNewReleases(newReleases) {
 }
 
 /**
+ * Validates that a release object is in a valid form.
+ *
+ * @param {Object} release - The release to validate.
+ * @throw {Error} - Throws an error if the release is not valid.
+ */
+function validateNewReleaseStructure(release) {
+  if (typeof release != "object") {
+    throw new Error("Each release should be an object");
+  }
+
+  // Check that all required fields are present and of the correct type
+  if (!Object.prototype.hasOwnProperty.call(release, "releaseName") ||
+      typeof release.releaseName !== "string") {
+    throw new Error("Each release should have a string property"+
+        " 'releaseName'");
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(release, "releaseOperator") ||
+      typeof release.releaseOperator !== "string") {
+    throw new Error("Each release should have a string property" +
+        " 'releaseName'");
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(release, "codeFreezeDate") ||
+      !(release.codeFreezeDate instanceof Timestamp)) {
+    throw new Error("Each release should have a Firestore Timestamp"+
+        " property 'codeFreezeDate'");
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(release, "releaseDate") ||
+      !(release.releaseDate instanceof Timestamp)) {
+    throw new Error("Each release should have a Firestore Timestamp"+
+        " property 'releaseDate'");
+  }
+}
+
+/**
  * Validates new releases before they are stored in Firestore.
  * This is primarily to ensure the date format is held, and not to ensure
  * that any logical errors don't exist in the code.
  *
  * @param {Array} newReleases - New releases to validate
  */
-function validateNewReleaseStructure(newReleases) {
+function validateNewReleasesStructure(newReleases) {
   if (!Array.isArray(newReleases)) {
     throw new Error("New releases should be an array");
   }
 
-  // Validate each release object
-  newReleases.forEach((release) => {
-    if (typeof release != "object") {
-      throw new Error("Each release should be an object");
-    }
-
-    // Check that all required fields are present and of the correct type
-    if (!Object.prototype.hasOwnProperty.call(release, "releaseName") ||
-      typeof release.releaseName !== "string") {
-      throw new Error("Each release should have a string property"+
-        " 'releaseName'");
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(release, "releaseOperator") ||
-      typeof release.releaseOperator !== "string") {
-      throw new Error("Each release should have a string property" +
-        " 'releaseName'");
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(release, "codeFreezeDate") ||
-      !(release.codeFreezeDate instanceof Timestamp)) {
-      throw new Error("Each release should have a Firestore Timestamp"+
-        " property 'codeFreezeDate'");
-    }
-
-    if (!Object.prototype.hasOwnProperty.call(release, "releaseDate") ||
-      !(release.releaseDate instanceof Timestamp)) {
-      throw new Error("Each release should have a Firestore Timestamp"+
-        " property 'releaseDate'");
-    }
-  });
+  newReleases.forEach(validateNewReleaseStructure);
 }
 
 module.exports = {
@@ -233,5 +241,5 @@ module.exports = {
   isValidDate,
   validateRelease,
   validateNewReleases,
-  validateNewReleaseStructure,
+  validateNewReleasesStructure,
 };

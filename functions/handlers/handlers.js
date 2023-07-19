@@ -39,7 +39,7 @@ const RELEASE_STATES = require("../utils/releaseStates.js");
 /**
  * Add new Firebase Android SDK releases.
  *
- * This function is used to add upcoming or previous releases to the database.
+ * Used to add upcoming or previous releases to the database.
  * Based on the release dates, the release state will be inferred and set
  * automatically, and then the release will be synced.
  *
@@ -181,7 +181,7 @@ async function addReleases(req, res) {
 /**
  * Refreshes the Firestore data for a specific GitHub release.
  *
- * This function first validates the incoming HTTP request, then
+ * Validates the incoming HTTP request, then
  * uses the provided GitHub release name to fetch the corresponding Firestore
  * document. If a matching document is found, it then updates the document
  * with the latest release information from GitHub.
@@ -248,8 +248,7 @@ async function refreshRelease(req, res) {
 
 /**
  * Retrieve all the data for all releases from Firestore, and return
- * it as an array of release objects. This function is used to fetch
- * the data for the release dashboard.
+ * it as an array of release objects.
  *
  * @param {Object} req - The request from the client.
  * @param {Object} res - The response object to be sent to the client.
@@ -427,7 +426,7 @@ async function modifyReleases(req, res) {
 }
 
 /**
- * Syncs the state of a release. This function infers the current state of the
+ * Syncs the state of a release. Infers the current state of the
  * release, updates its state in the database, and fetches data from GitHub
  * if the release
  * is not upcoming or scheduled. It also handles possible errors and updates
