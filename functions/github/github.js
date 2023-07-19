@@ -1,5 +1,6 @@
 const {log, error} = require("firebase-functions/logger");
 const {parseGradlePropertiesForVersion} = require("../utils/utils.js");
+const crypto = require("crypto");
 
 const OWNER = "firebase";
 const REPO = "firebase-android-sdk";
@@ -267,6 +268,22 @@ async function getBuildArtifactsWorkflow(octokit, releaseBranchName) {
   }
 }
 
+/**
+  * Verifies the signature of a request.
+  *
+  * @param {Object} req The request to verify.
+  * @param {string} secret The secret to use to verify the signature.
+  * @return {boolean} True if the signature is valid, false otherwise.
+  */
+function verifySignature(req, secret) {
+  const signature = crypto
+      .createHmac("sha256", secret)
+      .update(JSON.stringify(req.body))
+      .digest("hex");
+
+  return `sha256=${signature}` === req.headers["x-hub-signature-256"];
+}
+
 module.exports = {
   listCheckRuns,
   getReleaseConfig,
@@ -274,5 +291,6 @@ module.exports = {
   getLibraryMetadata,
   checkReleaseBranchExists,
   getBuildArtifactsWorkflow,
+  verifySignature,
   REPO_URL,
 };
