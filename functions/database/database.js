@@ -351,7 +351,6 @@ async function updateChangesForRelease(releaseReport, releaseId) {
   await batch.commit();
 }
 
-
 /**
  * Deletes all existing check documents associated with a release.
  *
@@ -414,6 +413,30 @@ async function updateChecksForRelease(checkRunList, releaseId) {
   await batch.commit();
 }
 
+/**
+  * Update a check run in Firestore.
+  *
+  * This function is not to be used for creating new check runs.
+  * Because of this, it does not set fields that are static.
+  *
+  * @param {string} checkRunId The ID of the check run to update.
+  * @param {string} headSHA The SHA of the commit that the check run
+  * is associated with.
+  * @param {string} status The status of the check run.
+  * @param {string} conclusion The conclusion of the check run.
+  * @throws {Error} If the check run does not exist in Firestore.
+  * @return {Promise<void>} A promise that resolves when the check run
+  * has been updated.
+  */
+async function updateCheckRunStatus(checkRunId, headSHA, status, conclusion) {
+  const docRef = db.collection("checks").doc(checkRunId);
+  await docRef.set({
+    headSHA: headSHA,
+    status: status,
+    conclusion: conclusion,
+  });
+}
+
 module.exports = {
   setReleases,
   getReleaseID,
@@ -424,4 +447,5 @@ module.exports = {
   updateChangesForRelease,
   updateChecksForRelease,
   getReleaseData,
+  updateCheckRunStatus,
 };

@@ -1,5 +1,6 @@
 const {
   getReleaseIdFromBranch,
+  updateCheckRunStatus,
 } = require("../database/database.js");
 const {
   syncReleaseState,
@@ -34,8 +35,7 @@ async function githubWebhook(req, res) {
 
   try {
     if (eventType === "check_run") {
-      // TODO
-      // await handleCheckRunEvent(payload);
+      await handleCheckRunEvent(payload);
     } else if (eventType === "pull_request") {
       await handlePullRequestEvent(payload);
     }
@@ -99,6 +99,50 @@ async function handlePullRequestEvent(payload) {
           log("Successfully synced release state", {releaseId: releaseId});
         } catch (err) {
           error("Failed to sync release state", {error: err.message});
+        }
+      }
+    }
+  }
+}
+
+
+/**
+  * Handles a GitHub check run event.
+  *
+  * @param {Object} payload The payload from the GitHub webhook.
+  * @return {Promise<void>}
+  */
+async function handleCheckRunEvent(payload) {
+  if (payload && payload.check_run) {
+    const checkRun = payload.check_run;
+
+    // If the check run is not for a release, then we can ignore it
+    if (checkRun.check_suite) {
+      const branchName = checkRun.check_suite.head_branch;
+
+      let releaseId;
+      try {
+        releaseId = getReleaseIdFromBranch(branchName);
+      } catch (err) {
+        error("Error getting release ID from branch name",
+            {error: err.message});
+      }
+
+      if (releaseId) {
+        try {
+          updateCheckRunStatus(
+              checkRun.id.toString(),
+              checkRun.head_sha,
+              checkRun.status,
+              checkRun.conclusion,
+          );
+          log("Successfully updated check run", {checkRun: checkRun});
+        } catch (err) {
+          error("Failed to update check run",
+              {
+                error: err.message,
+                checkRun: checkRun,
+              });
         }
       }
     }
