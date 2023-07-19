@@ -9,8 +9,10 @@ const {
   refreshRelease,
   getReleases,
   modifyReleases,
-  githubWebhook,
 } = require("./handlers/handlers.js");
+const {
+  githubWebhook,
+} = require("./github/webhooks.js");
 const {defineSecret} = require("firebase-functions/params");
 const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
 const GITHUB_WEBHOOK_SECRET = defineSecret("GITHUB_WEBHOOK_SECRET");

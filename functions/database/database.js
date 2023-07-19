@@ -7,6 +7,7 @@ const {
 } = require("../validation/validation.js");
 const {parseCommitTitleFromMessage} = require("../utils/utils.js");
 const {REPO_URL} = require("../github/github.js");
+const {warn} = require("firebase-functions/logger");
 
 /**
  * Retrieve the release ID of the Firestore release document
@@ -31,6 +32,39 @@ async function getReleaseID(releaseName) {
     throw new Error(
         `There should be at most one release with name: ${releaseName},
       instead ${releaseSnapshot.size} were releases found.`,
+    );
+  }
+
+  const releaseId = releaseSnapshot.docs[0].id;
+
+  return releaseId;
+}
+
+/**
+ * Retrieve the release ID of the Firestore release document
+ * with a given release branch.
+ *
+ * @param {string} releaseBranchName The release branch name of the release
+ * document to fetch.
+ * @return {Promise<string|null>} A promise that resolves to the release ID,
+ * or null if no release was found.
+ */
+async function getReleaseIdFromBranch(releaseBranchName) {
+  const releaseSnapshot = await db.collection("releases")
+      .where("releaseBranchName", "==", releaseBranchName)
+      .get();
+
+  if (releaseSnapshot.empty) {
+    return null;
+  }
+
+  if (releaseSnapshot.size > 1) {
+    warn("There should only be only one release that tracks a branch",
+        {
+          releaseBranchName: releaseBranchName,
+          numBranches: releaseSnapshot.size,
+          releaseSnapshot: releaseSnapshot.docs.map((doc) => doc.data()),
+        },
     );
   }
 
@@ -383,6 +417,7 @@ async function updateChecksForRelease(checkRunList, releaseId) {
 module.exports = {
   setReleases,
   getReleaseID,
+  getReleaseIdFromBranch,
   updateRelease,
   updateReleaseState,
   updateLibrariesForRelease,

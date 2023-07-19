@@ -2,7 +2,6 @@ const admin = require("firebase-admin");
 const {Octokit} = require("@octokit/rest");
 const {defineSecret} = require("firebase-functions/params");
 const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
-const GITHUB_WEBHOOK_SECRET = defineSecret("GITHUB_WEBHOOK_SECRET");
 
 const {
   log,
@@ -26,7 +25,6 @@ const {
   getBuildArtifactsWorkflow,
   listCheckRuns,
   getLibraryMetadata,
-  verifySignature,
 } = require("../github/github.js");
 const {validateNewReleases} = require("../validation/validation.js");
 const {
@@ -560,32 +558,11 @@ async function syncReleaseState(releaseId, octokit) {
   }
 }
 
-/**
-  * Handles a GitHub check run event. This function is called when a check run
-  * is created, completed, or rerequested. It updates the release state if
-  * necessary.
-  *
-  * @param {Object} req - The request object.
-  * @param {Object} res - The response object.
-  * @return {Promise} A promise that resolves when the request is complete.
-  */
-async function githubWebhook(req, res) {
-  if (!verifySignature(req, GITHUB_WEBHOOK_SECRET.value())) {
-    return res.status(401).send("Unauthorized");
-  }
-
-  const payload = req.body;
-  const eventType = req.headers["x-github-event"];
-
-  log("Received GitHub webhook", {eventType: eventType, payload: payload});
-
-  return res.status(200).send("OK");
-}
 
 module.exports = {
   addReleases,
   refreshRelease,
   getReleases,
   modifyReleases,
-  githubWebhook,
+  syncReleaseState,
 };
