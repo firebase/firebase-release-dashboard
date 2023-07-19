@@ -36,9 +36,6 @@ async function githubWebhook(req, res) {
     if (eventType === "check_run") {
       // TODO
       // await handleCheckRunEvent(payload);
-    } else if (eventType === "push") {
-      // TODO
-      // await handlePushEvent(payload);
     } else if (eventType === "pull_request") {
       await handlePullRequestEvent(payload);
     }
@@ -59,21 +56,19 @@ async function githubWebhook(req, res) {
 /**
   * Handles a GitHub pull request event.
   *
-  * This function is called when a pull
-  * request is opened. It updates the release state if the pull request
-  * was opened on a branch that is currently being tracked by one of the
-  * releases.
+  * Updates the release state if the the event implies that the release state
+  * has changed, and needs to be synchronized. As of now, those two events are
+  * opens, and synchronizes (pushes to the pull request branch).
   *
   * @param {Object} payload The payload from the GitHub webhook.
   * @return {Promise<void>}
   */
 async function handlePullRequestEvent(payload) {
-  if (payload.action === "opened") {
+  if (payload.action === "opened" || payload.action == "synchronize") {
     const pullRequest = payload.pull_request;
 
     if (pullRequest && pullRequest.head) {
       const branchName = pullRequest.head.ref;
-      log("Pull request event", {branchName: branchName});
 
       let releaseId;
       try {
@@ -93,7 +88,7 @@ async function handlePullRequestEvent(payload) {
       // state.
       if (releaseId) {
         try {
-          log("Pull request opened on a release branch",
+          log("Pull request updated on release branch",
               {
                 releaseId: releaseId,
                 branchName: branchName,
@@ -105,16 +100,11 @@ async function handlePullRequestEvent(payload) {
         } catch (err) {
           error("Failed to sync release state", {error: err.message});
         }
-      } else {
-        log("Pull request opened on a non-release branch",
-            {branchName: branchName});
       }
     }
   }
 }
 
-
 module.exports = {
   githubWebhook,
-  handlePullRequestEvent,
 };
