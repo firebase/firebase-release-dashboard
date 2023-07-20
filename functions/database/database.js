@@ -317,7 +317,7 @@ function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
  * deletes any existing changes associated with the release.
  *
  * @param {Object} releaseReport The release report containing changes by
- * library name. The structure of the releas report can be found at
+ * library name. The structure of the release report can be found at
  * https://github.com/firebase/firebase-android-sdk/pull/5077#issuecomment-1591661163
  * @param {string} releaseId The ID of the associated release.
  * @throws {Error} If a library in the release report does not exist in
