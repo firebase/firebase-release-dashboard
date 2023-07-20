@@ -14,7 +14,7 @@ const REGEX = {
   EXTRACT_COMMIT_TITLE_FROM_MESSAGE: /(.+)(?=\s\(#[0-9]+\)\n)/,
   // This regular expression matches a valid release name. Valid release names
   // are of the form "M<releaseNumber>".
-  RELEASE_NAME: /^M\d+$/,
+  RELEASE_NAME: /^M\d+\S*$/,
 };
 
 module.exports = REGEX;

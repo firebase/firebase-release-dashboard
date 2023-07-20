@@ -20,9 +20,21 @@ describe("isValidReleaseName", () => {
     expect(isValidReleaseName(invalidReleaseName)).to.be.false;
   });
 
-  it("should return false for a release name with non-numeric characters"+
+  it("should return true for a release name with non-numeric characters"+
     " after the M", () => {
-    const invalidReleaseName = "M12A";
+    const invalidReleaseName = "M12_A12";
+    expect(isValidReleaseName(invalidReleaseName)).to.be.true;
+  });
+
+  it("should return false for a release name with non-numeric characters"+
+    " before the M", () => {
+    const invalidReleaseName = "AM12";
+    expect(isValidReleaseName(invalidReleaseName)).to.be.false;
+  });
+
+  it("should return false for a release name with non-numeric characters"+
+    " between the M and the relase number", () => {
+    const invalidReleaseName = "MA12";
     expect(isValidReleaseName(invalidReleaseName)).to.be.false;
   });
 
@@ -118,26 +130,6 @@ describe("validateNewReleases", () => {
     const newReleases = [
       {
         releaseName: "m101",
-        releaseOperator: "operator1",
-        codeFreezeDate: "2123-06-30",
-        releaseDate: "2123-07-07",
-      },
-    ];
-    const existingReleases = [];
-
-    const errors = await validateNewReleases(newReleases, existingReleases);
-    const expectedErrors = {
-      message: ERRORS.INVALID_RELEASE_NAME,
-      offendingRelease: newReleases[0],
-    };
-
-    expect(errors).to.deep.include(expectedErrors);
-  });
-
-  it("should return an error for invalid release name", async () => {
-    const newReleases = [
-      {
-        releaseName: "M101.release",
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
