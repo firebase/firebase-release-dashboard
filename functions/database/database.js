@@ -130,26 +130,6 @@ async function setReleases(newReleases) {
 
   await batch.commit();
 }
-/**
- * Delete the releases in Firestore with code freeze dates that are in the
- * future.
- *
- * This is intented to be used when scheduling new upcoming releases,
- * but we need to delete the old upcoming releases before.
- */
-async function deleteUpcomingReleases() {
-  const today = Timestamp.now();
-  const releasesRef = db.collection("releases");
-  const query = releasesRef.where("codeFreezeDate", ">", today);
-  const querySnapshot = await query.get();
-  const batch = db.batch();
-
-  querySnapshot.forEach((doc) => {
-    batch.delete(doc.ref);
-  });
-
-  await batch.commit();
-}
 
 /**
  * Update a release in Firestore.
@@ -403,7 +383,6 @@ async function updateChecksForRelease(checkRunList, releaseId) {
 
 module.exports = {
   setReleases,
-  deleteUpcomingReleases,
   getReleaseID,
   updateRelease,
   updateReleaseState,
