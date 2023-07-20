@@ -16,8 +16,7 @@ const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
 
 /**
   * Handles a GitHub check run event. This function is called when a check run
-  * is created, completed, or rerequested. It updates the release state if
-  * necessary.
+  * is created or completed. It updates the release state if necessary.
   *
   * @param {Object} req - The request object.
   * @param {Object} res - The response object.
@@ -66,40 +65,37 @@ async function githubWebhook(req, res) {
 async function handlePullRequestEvent(payload) {
   if (payload.action === "opened" || payload.action == "synchronize") {
     const pullRequest = payload.pull_request;
+    const branchName = pullRequest.head.ref;
 
-    if (pullRequest && pullRequest.head) {
-      const branchName = pullRequest.head.ref;
+    let releaseId;
+    try {
+      releaseId = await getReleaseIdFromBranch(branchName);
+    } catch (err) {
+      error("Error getting release ID from branch name",
+          {error: err.message});
+      return;
+    }
 
-      let releaseId;
+    // If the releaseId exists, then a pull request was opened on a branch
+    // that is being tracked for a release.
+    //
+    // We assume that once a pull request is created on a release branch,
+    // the release configuration has been successfully generated.
+    // If this assumption is wrong, then the release will enter an error
+    // state.
+    if (releaseId) {
       try {
-        releaseId = await getReleaseIdFromBranch(branchName);
+        log("Pull request updated on release branch",
+            {
+              releaseId: releaseId,
+              branchName: branchName,
+              pullRequest: pullRequest,
+            });
+        const octokit = new Octokit({auth: GITHUB_TOKEN.value()});
+        await syncReleaseState(releaseId, octokit);
+        log("Successfully synced release state", {releaseId: releaseId});
       } catch (err) {
-        error("Error getting release ID from branch name",
-            {error: err.message});
-        return;
-      }
-
-      // If the releaseId exists, then a pull request was opened on a branch
-      // that is being tracked for a release.
-      //
-      // We assume that once a pull request is created on a release branch,
-      // the release configuration has been successfully generated.
-      // If this assumption is wrong, then the release will enter an error
-      // state.
-      if (releaseId) {
-        try {
-          log("Pull request updated on release branch",
-              {
-                releaseId: releaseId,
-                branchName: branchName,
-                pullRequest: pullRequest,
-              });
-          const octokit = new Octokit({auth: GITHUB_TOKEN.value()});
-          await syncReleaseState(releaseId, octokit);
-          log("Successfully synced release state", {releaseId: releaseId});
-        } catch (err) {
-          error("Failed to sync release state", {error: err.message});
-        }
+        error("Failed to sync release state", {error: err.message});
       }
     }
   }
