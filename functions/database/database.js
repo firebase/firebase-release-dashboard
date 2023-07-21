@@ -187,18 +187,18 @@ async function batchDeleteReleaseLibraries(batch, releaseId) {
  * @param {admin.firestore.WriteBatch} batch The batch to add the
  * set operations to.
  * @param {Object} libraries Object mapping library names to their
- * versions, optedIn and isLockstep flags.
+ * versions, optedIn and libraryGroupRelease flags.
  * @param {string} releaseId The ID of the associated release.
  */
 function batchSetLibrariesForRelease(batch, libraries, releaseId) {
   Object.entries(libraries).forEach(
-      ([libraryName, {updatedVersion, optedIn, isLockstep}]) => {
+      ([libraryName, {updatedVersion, optedIn, libraryGroupRelease}]) => {
         const docRef = db.collection("libraries").doc();
         batch.set(docRef, {
           libraryName,
           updatedVersion,
           optedIn,
-          isLockstep,
+          libraryGroupRelease,
           releaseID: releaseId,
         });
       });

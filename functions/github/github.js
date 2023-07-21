@@ -75,6 +75,15 @@ async function listCheckRuns(octokit, ref) {
 /**
  * Fetches and parses release configuration data from a GitHub repository.
  *
+ * The release configuration is expected to be in the following format:
+ * {
+ *   "name": string,
+ *   "libraries": Array<string>
+ * }
+ *
+ * For an example, see:
+ * https://github.com/firebase/firebase-android-sdk/blob/releases/M134.release/release.json
+ *
  * @param {Octokit} octokit The authenticated Octokit client.
  * @param {Object} releaseData The release data containing the branch name.
  * @return {Promise<Object>} A promise that resolves to the parsed configuration
@@ -90,6 +99,17 @@ async function getReleaseConfig(octokit, releaseData) {
 
 /**
  * Fetches and parses release report data from a GitHub repository.
+ *
+ * The release report is expected to be in the following format:
+ * {
+ *   "changesByLibraryName": {
+ *     libraryName: Array<Object>
+ *    ],
+ *    "changedLibrariesWithNoChangeLog": Array<string>,
+ * }
+ *
+ * For an example, see:
+ * https://github.com/firebase/firebase-android-sdk/blob/releases/M134.release/release_report.json
  *
  * @param {Octokit} octokit The authenticated Octokit client.
  * @param {Object} releaseData The release data containing the branch name.
@@ -139,7 +159,7 @@ async function getLibraryMetadata(
       libraryMetadata[library] = {
         "updatedVersion": libraryVersions[library],
         "optedIn": !releaseReport.changesByLibraryName[library],
-        "isLockstep": !releaseReport.changesByLibraryName[library] ||
+        "libraryGroupRelease": !releaseReport.changesByLibraryName[library] ||
         releaseReport.changesByLibraryName[library].length === 0,
       };
     }

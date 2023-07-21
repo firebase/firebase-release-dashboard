@@ -198,7 +198,7 @@ async function refreshRelease(req, res) {
       });
 
   authenticateUser(req, res, async () => {
-  // Reject non-POST methods
+    // Reject non-POST methods
     if (req.method !== "POST") {
       warn("Invalid method", {req: req});
       return res.status(405).send("Method Not Allowed");
@@ -381,7 +381,7 @@ async function modifyReleases(req, res) {
     }
 
     for (const release of releasesWithConvertedDates) {
-    // Get the release ID of the release to modify
+      // Get the release ID of the release to modify
       let releaseId;
       try {
         releaseId = await getReleaseID(release.releaseName);
