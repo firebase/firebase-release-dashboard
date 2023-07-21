@@ -10,8 +10,12 @@ const {
   getReleases,
   modifyReleases,
 } = require("./handlers/handlers.js");
+const {
+  githubWebhook,
+} = require("./github/webhooks.js");
 const {defineSecret} = require("firebase-functions/params");
 const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
+const GITHUB_WEBHOOK_SECRET = defineSecret("GITHUB_WEBHOOK_SECRET");
 
 exports.addReleases = functions.https.onRequest(
     {secrets: [GITHUB_TOKEN]},
@@ -23,3 +27,6 @@ exports.modifyReleases = functions.https.onRequest(
 exports.refreshRelease = functions.https.onRequest(
     {secrets: [GITHUB_TOKEN]},
     refreshRelease);
+exports.githubWebhook = functions.https.onRequest(
+    {secrets: [GITHUB_TOKEN, GITHUB_WEBHOOK_SECRET]},
+    githubWebhook);

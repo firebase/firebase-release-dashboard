@@ -1,6 +1,5 @@
 const admin = require("firebase-admin");
 const db = admin.firestore();
-const {Timestamp} = require("firebase-admin/firestore");
 const RELEASE_STATES = require("../utils/releaseStates.js");
 const {
   validateNewReleasesStructure,
@@ -8,6 +7,7 @@ const {
 } = require("../validation/validation.js");
 const {parseCommitTitleFromMessage} = require("../utils/utils.js");
 const {REPO_URL} = require("../github/github.js");
+const {warn} = require("firebase-functions/logger");
 
 /**
  * Retrieve the release ID of the Firestore release document
@@ -32,6 +32,39 @@ async function getReleaseID(releaseName) {
     throw new Error(
         `There should be at most one release with name: ${releaseName},
       instead ${releaseSnapshot.size} were releases found.`,
+    );
+  }
+
+  const releaseId = releaseSnapshot.docs[0].id;
+
+  return releaseId;
+}
+
+/**
+ * Retrieve the release ID of the Firestore release document
+ * with a given release branch.
+ *
+ * @param {string} releaseBranchName The release branch name of the release
+ * document to fetch.
+ * @return {Promise<string|null>} A promise that resolves to the release ID,
+ * or null if no release was found.
+ */
+async function getReleaseIdFromBranch(releaseBranchName) {
+  const releaseSnapshot = await db.collection("releases")
+      .where("releaseBranchName", "==", releaseBranchName)
+      .get();
+
+  if (releaseSnapshot.empty) {
+    return null;
+  }
+
+  if (releaseSnapshot.size > 1) {
+    warn("There should only be only one release that tracks a branch",
+        {
+          releaseBranchName: releaseBranchName,
+          numBranches: releaseSnapshot.size,
+          releaseSnapshot: releaseSnapshot.docs.map((doc) => doc.data()),
+        },
     );
   }
 
@@ -209,9 +242,9 @@ function batchSetLibrariesForRelease(batch, libraries, releaseId) {
  * object, and deletes any existing library versions associated with the
  * release.
  *
- * @param {Object} libraries Object mapping library names to their
- * versions, optedIn and isLockstep flags.
- * @param {string} releaseId The ID of the associated release.
+ * @param {admin.firestore.WriteBatch} libraries The batch to add the
+ * delete operations to.
+ * @param {string} releaseId
  */
 async function updateLibrariesForRelease(libraries, releaseId) {
   const batch = db.batch();
@@ -318,7 +351,6 @@ async function updateChangesForRelease(releaseReport, releaseId) {
   await batch.commit();
 }
 
-
 /**
  * Deletes all existing check documents associated with a release.
  *
@@ -381,13 +413,39 @@ async function updateChecksForRelease(checkRunList, releaseId) {
   await batch.commit();
 }
 
+/**
+  * Update a check run in Firestore.
+  *
+  * This function is not to be used for creating new check runs.
+  * Because of this, it does not set fields that are static.
+  *
+  * @param {string} checkRunId The ID of the check run to update.
+  * @param {string} headSHA The SHA of the commit that the check run
+  * is associated with.
+  * @param {string} status The status of the check run.
+  * @param {string} conclusion The conclusion of the check run.
+  * @throws {Error} If the check run does not exist in Firestore.
+  * @return {Promise<void>} A promise that resolves when the check run
+  * has been updated.
+  */
+async function updateCheckRunStatus(checkRunId, headSHA, status, conclusion) {
+  const docRef = db.collection("checks").doc(checkRunId);
+  await docRef.set({
+    headSHA: headSHA,
+    status: status,
+    conclusion: conclusion,
+  });
+}
+
 module.exports = {
   setReleases,
   getReleaseID,
+  getReleaseIdFromBranch,
   updateRelease,
   updateReleaseState,
   updateLibrariesForRelease,
   updateChangesForRelease,
   updateChecksForRelease,
   getReleaseData,
+  updateCheckRunStatus,
 };

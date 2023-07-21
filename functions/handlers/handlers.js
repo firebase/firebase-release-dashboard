@@ -558,9 +558,11 @@ async function syncReleaseState(releaseId, octokit) {
   }
 }
 
+
 module.exports = {
   addReleases,
   refreshRelease,
   getReleases,
   modifyReleases,
+  syncReleaseState,
 };

@@ -1,5 +1,6 @@
 const {log, error} = require("firebase-functions/logger");
 const {parseGradlePropertiesForVersion} = require("../utils/utils.js");
+const crypto = require("crypto");
 
 const OWNER = "firebase";
 const REPO = "firebase-android-sdk";
@@ -267,6 +268,33 @@ async function getBuildArtifactsWorkflow(octokit, releaseBranchName) {
   }
 }
 
+/**
+  * Verifies the signature of a request.
+  *
+  * We want to limit requests to those coming from GitHub. To do this, we
+  * verify the signature of the request using the secret set in the webhook.
+  * The signature is passed in the `x-hub-signature` header as a SHA256 HMAC
+  * hex digest. The signature is generated using the request body as the
+  * message and the secret as the key. The signature in the header is prefixed
+  * with `sha256=`. We verify the signature by generating our own signature
+  * using the secret and the request body and comparing it to the signature
+  * in the header. If they match, the request is verified.
+  *
+  * See https://docs.github.com/en/webhooks-and-events/webhooks/securing-your-webhooks
+  *
+  * @param {Object} req The request to verify.
+  * @param {string} secret The secret to use to verify the signature.
+  * @return {boolean} True if the signature is valid, false otherwise.
+  */
+function verifySignature(req, secret) {
+  const signature = crypto
+      .createHmac("sha256", secret)
+      .update(JSON.stringify(req.body))
+      .digest("hex");
+
+  return `sha256=${signature}` === req.headers["x-hub-signature-256"];
+}
+
 module.exports = {
   listCheckRuns,
   getReleaseConfig,
@@ -274,5 +302,6 @@ module.exports = {
   getLibraryMetadata,
   checkReleaseBranchExists,
   getBuildArtifactsWorkflow,
+  verifySignature,
   REPO_URL,
 };

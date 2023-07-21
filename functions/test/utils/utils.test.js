@@ -15,14 +15,12 @@ describe("convertDateToTimestamp", () => {
   it("should correctly convert a date string to a Firestore Timestamp", () => {
     const dateString = "2023-07-19";
     const result = convertDateToTimestamp(dateString);
-
     expect(result).to.be.an.instanceof(Timestamp);
   });
 
   it("should throw an error if date string format is invalid", () => {
     const dateString = "invalid-date-format";
     const consoleErrorStub = sinon.stub(console, "error");
-
     expect(() => convertDateToTimestamp(dateString)).to.throw();
     consoleErrorStub.restore();
   });
@@ -74,7 +72,6 @@ describe("calculateReleaseState", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
     const release = new Date(codeFreeze.getTime() + 5 * 24 * 60 * 60 * 1000);
-
     expect(calculateReleaseState(codeFreeze, release, false))
         .to.equal(RELEASE_STATES.SCHEDULED);
   });
@@ -83,14 +80,12 @@ describe("calculateReleaseState", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     const release = new Date(codeFreeze.getTime() + 2 * 24 * 60 * 60 * 1000);
-
     expect(calculateReleaseState(codeFreeze, release, false))
         .to.equal(RELEASE_STATES.UPCOMING);
   });
 
   it("should throw error if unable to calculate state", () => {
     const now = new Date();
-
     expect(() => calculateReleaseState(now, now, false))
         .to.throw("Unable to calculate release state");
   });
@@ -100,7 +95,6 @@ describe("calculateReleaseState", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const release = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-
     expect(calculateReleaseState(codeFreeze, release, false))
         .to.equal(RELEASE_STATES.CODE_FREEZE);
   });
@@ -109,7 +103,6 @@ describe("calculateReleaseState", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
     const release = new Date(now.setHours(0, 0, 0, 0));
-
     expect(calculateReleaseState(codeFreeze, release, false))
         .to.equal(RELEASE_STATES.RELEASE_DAY);
   });
@@ -119,7 +112,6 @@ describe("calculateReleaseState", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000);
     const release = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-
     expect(calculateReleaseState(codeFreeze, release, true))
         .to.equal(RELEASE_STATES.RELEASED);
   });
@@ -129,7 +121,6 @@ describe("calculateReleaseState", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000);
     const release = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
-
     expect(calculateReleaseState(codeFreeze, release, false))
         .to.equal(RELEASE_STATES.DELAYED);
   });
@@ -178,40 +169,34 @@ describe("parseGradlePropertiesForVersion", () => {
   it("should work on the simple case", () => {
     const gradleProps = "version=1.2.3";
     const version = parseGradlePropertiesForVersion(gradleProps);
-
     expect(version).to.equal("1.2.3");
   });
   it("should ignore commented lines", () => {
     const gradleProps = `#version=1.2.3\nversion=2.3.4`;
     const version = parseGradlePropertiesForVersion(gradleProps);
-
     expect(version).to.equal("2.3.4");
   });
 
   it("should handle leading and trailing whitespace", () => {
     const gradleProps = " \t version = 3.4.5 \t ";
     const version = parseGradlePropertiesForVersion(gradleProps);
-
     expect(version).to.equal("3.4.5");
   });
 
   it("should handle case-insensitivity", () => {
     const gradleProps = "VERSION=4.5.6";
     const version = parseGradlePropertiesForVersion(gradleProps);
-
     expect(version).to.equal("4.5.6");
   });
 
   it("should ignore lines without equals sign", () => {
     const gradleProps = "version\nversion=5.6.7";
     const version = parseGradlePropertiesForVersion(gradleProps);
-
     expect(version).to.equal("5.6.7");
   });
 
   it("should throw an error when no version is found", () => {
     const gradleProps = "no version here";
-
     expect(() => parseGradlePropertiesForVersion(gradleProps)).to.throw();
   });
 });
@@ -223,7 +208,6 @@ describe("parseCommitTitleFromMessage", () => {
       
       * Making methods in core.Query that memoize results thread safe.`;
     const result = parseCommitTitleFromMessage(message);
-
     expect(result).to
         .equal(
             "Making methods in core.Query that memoize "+
@@ -233,13 +217,11 @@ describe("parseCommitTitleFromMessage", () => {
 
   it("should throw an error if the pattern is not found", () => {
     const message = "No pattern match in this string.";
-
     expect(() => parseCommitTitleFromMessage(message)).to.throw();
   });
 
   it("should throw an error on empty strings", () => {
     const message = "";
-
     expect(() => parseCommitTitleFromMessage(message)).to.throw();
   });
 });
