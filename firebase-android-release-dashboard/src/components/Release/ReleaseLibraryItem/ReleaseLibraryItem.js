@@ -35,7 +35,7 @@ function ReleaseLibraryItem({library}) {
   return (
     <Paper elevation={0} className={classes.libraryPaper}>
       <Typography
-        variant="h6"
+        variant="subtitle1"
         color="textPrimary"
         className={classes.libraryName}
       >
@@ -43,13 +43,13 @@ function ReleaseLibraryItem({library}) {
       </Typography>
       {optedIn ? (
         <Alert severity="info">
-          <AlertTitle>Manually Opted In</AlertTitle>
+          <AlertTitle variant="body2">Manually Opted In</AlertTitle>
           This library was manually opted in to the release by the
           release operator.
         </Alert>
       ) : libraryGroupRelease ? (
         <Alert severity="info">
-          <AlertTitle>Library Group Release</AlertTitle>
+          <AlertTitle variant="body2">Library Group Release</AlertTitle>
           This library was included in the release to ensure
           its version stays aligned with other libraries.
         </Alert>
@@ -57,7 +57,7 @@ function ReleaseLibraryItem({library}) {
         changes.map(
             ({commitLink, commitTitle, kotlin,
               pullRequestLink, pullRequestID}, index) => (
-              <Typography variant="body1" color="textPrimary" key={index}>
+              <Typography variant="body2" color="textPrimary" key={index}>
                 <Link href={commitLink} target="_blank" rel="noreferrer">
                   <GitCommitIcon className={classes.icon} size={16} />
                 </Link>

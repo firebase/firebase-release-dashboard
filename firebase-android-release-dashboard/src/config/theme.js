@@ -6,25 +6,26 @@ const theme = createTheme({
   typography: {
     fontFamily: "\"Google Sans\", Arial, sans-serif",
     h6: {
-      fontSize: "16px",
+      // fontSize: "16px",
       fontFamily: "\"Google Sans\", Arial, sans-serif",
     },
     body1: {
-      fontSize: "14px",
+      // fontSize: "14px",
       fontFamily: "\"Roboto\", Arial, sans-serif",
     },
     body2: {
+      // fontSize: "12px",
       fontFamily: "\"Roboto\", Arial, sans-serif",
     },
     subtitle1: {
       fontFamily: "\"Google Sans\", Arial, sans-serif",
-      fontSize: "16px",
-      fontWeight: 400,
+      // fontSize: "16px",
+      // fontWeight: 400,
     },
     subtitle2: {
       fontFamily: "\"Google Sans\", Arial, sans-serif",
-      fontSize: "20px",
-      fontWeight: 300,
+      // fontSize: "20px",
+      // fontWeight: 300,
     },
   },
   palette: {

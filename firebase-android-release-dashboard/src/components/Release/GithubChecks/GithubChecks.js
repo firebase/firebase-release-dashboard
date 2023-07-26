@@ -32,7 +32,7 @@ function GithubChecks({checks}) {
         variant="contained"
         className={classes.checksButton}
         onClick={handleClickOpen}
-        startIcon={<MarkGithubIcon />}
+        startIcon={<MarkGithubIcon size={16}/>}
         aria-label="show all checks"
       >
         Show all checks

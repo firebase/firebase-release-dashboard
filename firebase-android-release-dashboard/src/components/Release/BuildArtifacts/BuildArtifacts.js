@@ -36,8 +36,7 @@ function BuildArtifacts({
         <Link href={buildArtifactLink} rel="noopener noreferrer">
           <Typography
             color="textPrimary"
-            variant="body1"
-            className={classes.buildArtifactLink}
+            variant="body2"
           >
             <PackageIcon
               size={24}
@@ -50,8 +49,7 @@ function BuildArtifacts({
       ) : (
         <Typography
           color="textSecondary"
-          variant="body1"
-          className={classes.libraryName}
+          variant="body2"
         >
           <PackageIcon
             size={24}

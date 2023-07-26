@@ -30,10 +30,10 @@ function ReleaseList({releases}) {
 
   return (
     <Box>
-      <Grid container>
+      <Grid container className={classes.metadataHeaders}>
         {releaseListHeaderItems.map((item, index) => (
           <Grid item xs={3} key={index} className={classes.metadataHeaderItem}>
-            <Typography variant="h6">
+            <Typography variant="subtitle1">
               {item}
             </Typography>
           </Grid>

@@ -5,9 +5,6 @@ const useStyles = makeStyles((theme) => ({
     marginRight: theme.spacing(0.5),
     color: theme.palette.text.primary,
   },
-  releaseBranchLink: {
-    fontSize: theme.typography.pxToRem(16),
-  },
   externalLink: {
     marginLeft: theme.spacing(0),
   },

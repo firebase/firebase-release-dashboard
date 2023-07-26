@@ -59,8 +59,7 @@ function ReleaseDetails({release}) {
               href={release.releaseBranchLink}
               rel="noopener noreferrer"
             >
-              <Typography variant="body1" color="textPrimary"
-                className={classes.releaseBranchLink}>
+              <Typography variant="body2" color="textPrimary">
                 <GitBranchIcon size={24} className={classes.releaseBranchIcon}/>
                 {release.releaseBranchName}
               </Typography>
