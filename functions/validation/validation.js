@@ -155,11 +155,11 @@ function validateRelease(release) {
 }
 
 /**
- * Validation checks for a set of upcoming releases. This function is only
+ * Validation checks for a set of new releases. This function is only
  * intended to be used to validate releases that are to be scheduled, and not
  * already existing releases.
  *
- * @param {Object} newReleases - A set of upcoming releases to be validated
+ * @param {Object} newReleases - A set of new releases to be validated
  * @return {Object} list of errors from the validation of the releases.
  */
 function validateNewReleases(newReleases) {
