@@ -1,6 +1,6 @@
 import {
   Box, Grid,
-  IconButton,
+  Link,
   List, ListItem,
   ListItemIcon,
   ListItemText,
@@ -60,29 +60,31 @@ function ChecksList({checks}) {
 
   return (
     <List>
-      {sortedChecks.map((check) => (
-        <ListItem key={check.id} className={classes.listItem}>
+      {sortedChecks.map((check, index) => (
+
+        <ListItem key={index} className={classes.listItem}>
           <ListItemIcon className={classes.listItemIcon}>
             {checkIcon(check.status, check.conclusion)}
           </ListItemIcon>
           <ListItemText
             primary={
               <Grid container alignItems="center">
-                <IconButton
-                  component="a"
+                <MarkGithubIcon size={16} className={classes.githubIcon} />
+                <Link
                   href={check.httpsUrl}
                   rel="noopener noreferrer"
-                  className={classes.iconButton}
+                  underline="none"
+                  className={classes.checkLink}
                 >
-                  <MarkGithubIcon size={16} className={classes.githubIcon} />
-                </IconButton>
-                <Box flexGrow={1}>
-                  {check.name}
-                </Box>
+                  <Box flexGrow={1}>
+                    {check.name}
+                  </Box>
+                </Link>
               </Grid>
             }
           />
         </ListItem>
+
       ))}
     </List>
   );
@@ -90,7 +92,6 @@ function ChecksList({checks}) {
 
 ChecksList.propTypes = {
   checks: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
     status: PropTypes.string.isRequired,
     conclusion: PropTypes.string.isRequired,
     httpsUrl: PropTypes.string.isRequired,

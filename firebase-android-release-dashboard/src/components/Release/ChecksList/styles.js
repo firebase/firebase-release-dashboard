@@ -12,8 +12,13 @@ const useStyles = makeStyles({
   iconButton: {
     padding: "5px",
   },
+  checkLink: {
+    textDecoration: "none",
+    color: "inherit",
+  },
   githubIcon: {
     color: "#24292e",
+    marginRight: "8px",
   },
   successIcon: {
     color: "#28a745",
