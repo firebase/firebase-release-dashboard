@@ -428,8 +428,7 @@ async function modifyReleases(req, res) {
 /**
  * Syncs the state of a release. Infers the current state of the
  * release, updates its state in the database, and fetches data from GitHub
- * if the release
- * is not upcoming or scheduled. It also handles possible errors and updates
+ * if the release is active. It also handles possible errors and updates
  * the release state to "error" if an exception is thrown.
  *
  * @param {string} releaseId - The ID of the release to sync.
@@ -452,9 +451,8 @@ async function syncReleaseState(releaseId, octokit) {
 
   log("Inferred release state", {releaseState: releaseState});
 
-  if (releaseState === RELEASE_STATES.UPCOMING ||
-    releaseState === RELEASE_STATES.SCHEDULED) {
-    // If the release is upcoming or scheduled, we don't need to
+  if (releaseState === RELEASE_STATES.SCHEDULED) {
+    // If the release is scheduled, we don't need to
     // fetch any data from GitHub, so we can just update the release
     // state and return
     await updateReleaseState(releaseId, releaseState);

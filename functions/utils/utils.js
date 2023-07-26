@@ -67,10 +67,8 @@ function calculateReleaseState(codeFreeze, release, isComplete) {
   const diffDaysCodeFreeze = Math.ceil(diffCodeFreeze / (1000 * 60 * 60 * 24));
   const diffDaysRelease = Math.ceil(diffRelease / (1000 * 60 * 60 * 24));
 
-  if (diffDaysCodeFreeze > 2) {
+  if (diffDaysCodeFreeze > 0) {
     return RELEASE_STATES.SCHEDULED;
-  } else if (diffDaysCodeFreeze <= 2 && diffDaysCodeFreeze > 0) {
-    return RELEASE_STATES.UPCOMING;
   } else if (diffDaysCodeFreeze <= 0 && diffDaysRelease > 0) {
     return RELEASE_STATES.CODE_FREEZE;
   } else if (diffDaysCodeFreeze < 0 && diffDaysRelease === 0) {

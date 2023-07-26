@@ -76,12 +76,12 @@ describe("calculateReleaseState", () => {
         .to.equal(RELEASE_STATES.SCHEDULED);
   });
 
-  it("should return UPCOMING if code freeze is less than 2 days away", () => {
+  it("should return SCHEDULED if code freeze is less than 2 days away", () => {
     const now = new Date();
-    const codeFreeze = new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    const release = new Date(codeFreeze.getTime() + 2 * 24 * 60 * 60 * 1000);
+    const codeFreeze = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000);
+    const release = new Date(codeFreeze.getTime() + 5 * 24 * 60 * 60 * 1000);
     expect(calculateReleaseState(codeFreeze, release, false))
-        .to.equal(RELEASE_STATES.UPCOMING);
+        .to.equal(RELEASE_STATES.SCHEDULED);
   });
 
   it("should throw error if unable to calculate state", () => {
