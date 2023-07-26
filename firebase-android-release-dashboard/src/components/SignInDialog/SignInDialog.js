@@ -57,7 +57,11 @@ function SignInDialog({open, onClose, onSuccess}) {
 
   return (
     <Dialog open={open} onClose={onClose} aria-labelledby="sign-in-dialog">
-      <DialogTitle>Administrator Sign In</DialogTitle>
+      <DialogTitle
+        className={classes.dialogTitle}
+      >
+        Administrator Sign In
+      </DialogTitle>
       <DialogContent className={classes.dialogContent}>
         {error && (
           <Alert severity="error" className={classes.error}>
