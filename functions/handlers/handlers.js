@@ -17,6 +17,7 @@ const {
   updateChangesForRelease,
   updateLibrariesForRelease,
   getReleaseData,
+  deleteAllReleaseData,
 } = require("../database/database.js");
 const {
   checkReleaseBranchExists,
@@ -558,11 +559,71 @@ async function syncReleaseState(releaseId, octokit) {
   }
 }
 
+/**
+ * Modify the release data for a specific release.
+ *
+ * @param {Object} req - The request from the client.
+ * @param {Object} res - The response object to be sent to the client.
+ * @return {Promise<void>}
+ */
+async function deleteRelease(req, res) {
+  log("Received HTTP Request",
+      {
+        hostname: req.hostname,
+        method: req.method,
+        body: req.body,
+      });
+
+  authenticateUser(req, res, async () => {
+    // Reject non-POST methods
+    if (req.method !== "POST") {
+      warn("Invalid method", {req: req});
+      return res.status(405).send("Method Not Allowed");
+    }
+
+    // Validate the request body
+    if (!req.body || !req.body.releaseName) {
+      warn("Missing release name in request body", {body: req.body});
+      return res.status(400).send("Bad Request");
+    }
+
+    // Check that the release exists
+    let releaseId;
+    try {
+      releaseId = await getReleaseID(req.body.releaseName);
+      if (!releaseId) {
+        warn("Release not found in Firestore",
+            {releaseName: req.body.releaseName});
+        return res.status(404).send("Not Found");
+      }
+
+      log("Release exists", {releaseName: req.body.releaseName});
+    } catch (err) {
+      error("Error getting release ID", {error: err.message});
+      return res.status(500).send("Internal Server Error");
+    }
+
+    // Delete all the data for the release
+    try {
+      await deleteAllReleaseData(releaseId);
+    } catch (err) {
+      error("Failed to delete release data", {error: err.message});
+    }
+
+    log(
+        "Successfully deleted release data",
+        {releaseName: req.body.releaseName},
+    );
+    return res.status(200).send("OK");
+  });
+}
+
 
 module.exports = {
   addReleases,
   refreshRelease,
   getReleases,
   modifyReleases,
+  deleteRelease,
   syncReleaseState,
 };

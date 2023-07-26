@@ -437,6 +437,28 @@ async function updateCheckRunStatus(checkRunId, headSHA, status, conclusion) {
   });
 }
 
+/**
+ * Deletes all data associated with a release.
+ *
+ * @param {string} releaseId The ID of the release to delete.
+ * @return {Promise<void>} A promise that resolves when the release
+ * data has been deleted.
+ */
+async function deleteAllReleaseData(releaseId) {
+  const batch = db.batch();
+
+  // Delete all the data associated with the release
+  await batchDeleteReleaseLibraries(batch, releaseId);
+  await batchDeleteReleaseChanges(batch, releaseId);
+  await batchDeleteReleaseChecks(batch, releaseId);
+
+  // Delete the release itself
+  const releaseDoc = db.collection("releases").doc(releaseId);
+  batch.delete(releaseDoc);
+
+  await batch.commit();
+}
+
 module.exports = {
   setReleases,
   getReleaseID,
@@ -448,4 +470,5 @@ module.exports = {
   updateChecksForRelease,
   getReleaseData,
   updateCheckRunStatus,
+  deleteAllReleaseData,
 };

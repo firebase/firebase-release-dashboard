@@ -9,6 +9,7 @@ const {
   refreshRelease,
   getReleases,
   modifyReleases,
+  deleteRelease,
 } = require("./handlers/handlers.js");
 const {
   githubWebhook,
@@ -27,6 +28,7 @@ exports.modifyReleases = functions.https.onRequest(
 exports.refreshRelease = functions.https.onRequest(
     {secrets: [GITHUB_TOKEN]},
     refreshRelease);
+exports.deleteRelease = functions.https.onRequest(deleteRelease);
 exports.githubWebhook = functions.https.onRequest(
     {secrets: [GITHUB_TOKEN, GITHUB_WEBHOOK_SECRET]},
     githubWebhook);
