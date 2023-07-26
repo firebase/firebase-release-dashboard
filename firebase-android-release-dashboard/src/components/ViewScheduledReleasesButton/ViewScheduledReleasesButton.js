@@ -26,7 +26,11 @@ function ViewScheduledReleasesButton({onClick}) {
           <Schedule size={24} className={classes.scheduleIcon}/>
         </Grid>
         <Grid item>
-          <Typography variant="subtitle1" color="inherit">
+          <Typography
+            variant="subtitle1"
+            color="inherit"
+            className={classes.scheduledReleasesButtonText}
+          >
             View Scheduled Releases
           </Typography>
         </Grid>
