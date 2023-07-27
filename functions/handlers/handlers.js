@@ -18,6 +18,7 @@ const {
   updateLibrariesForRelease,
   getReleaseData,
   deleteAllReleaseData,
+  releaseExists,
 } = require("../database/database.js");
 const {
   checkReleaseBranchExists,
@@ -27,7 +28,10 @@ const {
   listCheckRuns,
   getLibraryMetadata,
 } = require("../github/github.js");
-const {validateNewReleases} = require("../validation/validation.js");
+const {
+  validateNewReleases,
+  validateRelease,
+} = require("../validation/validation.js");
 const {
   convertReleaseDatesToTimestamps,
   processLibraryNames,
@@ -206,25 +210,18 @@ async function refreshRelease(req, res) {
     }
 
     // Validate the request body
-    if (!req.body || !req.body.releaseName) {
-      warn("Missing release name in request body", {body: req.body});
-      return res.status(400).send("Bad Request - Missing release name");
+    if (!req.body || !req.body.releaseId) {
+      warn("Missing release id in request body", {body: req.body});
+      return res.status(400).send("Bad Request");
     }
 
-    // Lookup the Firestore document corresponding to the release
-    let releaseId;
-    try {
-      releaseId = await getReleaseID(req.body.releaseName);
-      if (!releaseId) {
-        warn("Release not found in Firestore",
-            {releaseName: req.body.releaseName});
-        return res.status(400).send("Invalid Request");
-      }
-    } catch (err) {
-      warn("Error getting release ID", {error: err.message});
-      return res.status(400).send("Invalid Request");
+    // Check if the release exists
+    const releaseId = req.body.releaseId;
+    const exists = await releaseExists(releaseId);
+    if (!exists) {
+      warn("Release does not exist", {releaseId: releaseId});
+      return res.status(404).send("Not Found");
     }
-
 
     // Attempt to sync the release data with GitHub, and handle any errors
     try {
@@ -277,6 +274,10 @@ async function getReleases(req, res) {
     // Prepare to fetch associated data for each release
     const releasesPromises = releasesSnapshot.docs.map(async (releaseDoc) => {
       const releaseData = releaseDoc.data();
+
+      // Add the document ID to the release data to allow for clients to
+      // refer to the release by its ID in future requests.
+      releaseData.id = releaseDoc.id;
 
       // Convert Firestore Timestamps to JavaScript Dates
       if (releaseData.codeFreezeDate) {
@@ -427,6 +428,98 @@ async function modifyReleases(req, res) {
 }
 
 /**
+ * Modify the release data for a specific release.
+ *
+ * @param {Object} req - The request from the client.
+ * @param {Object} res - The response object to be sent to the client.
+ * @return {Promise<void>}
+ */
+async function modifyRelease(req, res) {
+  log("Received HTTP Request",
+      {
+        hostname: req.hostname,
+        method: req.method,
+        body: req.body,
+      });
+
+  authenticateUser(req, res, async () => {
+    if (req.method !== "POST") {
+      warn("Invalid method", {req: req.method});
+      return res.status(405).send("Method Not Allowed");
+    }
+
+    if (!req.body || !req.body.releaseId) {
+      warn("Missing release ID in request body", {req: req});
+      return res.status(400).send("Invalid request");
+    }
+
+    // Check if the release exists
+    const releaseId = req.body.releaseId;
+    const exists = await releaseExists(releaseId);
+    if (!exists) {
+      warn("Release does not exist", {releaseId: releaseId});
+      return res.status(404).send("Not Found");
+    }
+
+    const releaseData = req.body.release;
+    if (!releaseData) {
+      warn("Missing release data in request body",
+          {req: req});
+      return res.status(400).send("Invalid request");
+    }
+
+    log("Validating release data", {releaseData: releaseData});
+
+    // Verify the format of the release data
+    const errors = validateRelease(releaseData);
+    if (errors.length > 0) {
+      warn("request validation errors", {errors: errors});
+      return res.status(400).json({errors});
+    }
+
+    const octokit = new Octokit({auth: GITHUB_TOKEN.value()});
+
+    let releasesWithConvertedDates;
+    try {
+      releasesWithConvertedDates = convertReleaseDatesToTimestamps(releaseData);
+    } catch (err) {
+      warn("Error while converting dates to timestamps", {error: err.message});
+      return res.status(500).send("Internal Server Error");
+    }
+
+    const release = releasesWithConvertedDates[0];
+
+    // Update the release data in Firestore
+    try {
+      await updateRelease(releaseId, release);
+      log("Successfully updated release",
+          {releaseId: releaseId, release: release});
+    } catch (err) {
+      warn("Error updating release", {error: err.message});
+      return res.status(500).send("Internal Server Error");
+    }
+
+    // Since we've successfully updated the release, our
+    // release data is now going to be out of sync with the
+    // new release branch. To make sure that the release data
+    // is up to date, we need to sync the release state.
+    // If there are issues with the new release branch,
+    // the release state will be set to "error".
+    try {
+      await syncReleaseState(releaseId, octokit);
+      log("Successfully updated release and re-synced",
+          {releaseID: releaseId});
+    } catch (err) {
+      warn("Error re-syncing release", {error: err.message});
+      return res.status(500).send("Internal Server Error");
+    }
+
+
+    return res.status(200).send("OK");
+  });
+}
+
+/**
  * Syncs the state of a release. Infers the current state of the
  * release, updates its state in the database, and fetches data from GitHub
  * if the release is active. It also handles possible errors and updates
@@ -558,7 +651,7 @@ async function syncReleaseState(releaseId, octokit) {
 }
 
 /**
- * Modify the release data for a specific release.
+ * Delete the release data for a specific release.
  *
  * @param {Object} req - The request from the client.
  * @param {Object} res - The response object to be sent to the client.
@@ -580,37 +673,31 @@ async function deleteRelease(req, res) {
     }
 
     // Validate the request body
-    if (!req.body || !req.body.releaseName) {
-      warn("Missing release name in request body", {body: req.body});
+    if (!req.body || !req.body.releaseId) {
+      warn("Missing release id in request body", {body: req.body});
       return res.status(400).send("Bad Request");
     }
 
-    // Check that the release exists
-    let releaseId;
-    try {
-      releaseId = await getReleaseID(req.body.releaseName);
-      if (!releaseId) {
-        warn("Release not found in Firestore",
-            {releaseName: req.body.releaseName});
-        return res.status(404).send("Not Found");
-      }
-
-      log("Release exists", {releaseName: req.body.releaseName});
-    } catch (err) {
-      error("Error getting release ID", {error: err.message});
-      return res.status(500).send("Internal Server Error");
+    // Check if the release exists
+    const releaseId = req.body.releaseId;
+    const exists = await releaseExists(releaseId);
+    if (!exists) {
+      warn("Release does not exist", {releaseId: releaseId});
+      return res.status(404).send("Not Found");
     }
 
     // Delete all the data for the release
     try {
+      log("Deleting release data", {releaseId: releaseId});
       await deleteAllReleaseData(releaseId);
     } catch (err) {
       error("Failed to delete release data", {error: err.message});
+      return res.status(500).send("Internal Server Error");
     }
 
     log(
         "Successfully deleted release data",
-        {releaseName: req.body.releaseName},
+        {releaseId: releaseId},
     );
     return res.status(200).send("OK");
   });
@@ -622,6 +709,7 @@ module.exports = {
   refreshRelease,
   getReleases,
   modifyReleases,
+  modifyRelease,
   deleteRelease,
   syncReleaseState,
 };
