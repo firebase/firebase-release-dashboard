@@ -1,5 +1,5 @@
 import React from "react";
-import {Container, Typography} from "@material-ui/core";
+import {Container} from "@material-ui/core";
 import {makeStyles} from "@material-ui/core/styles";
 
 const useStyles = makeStyles((theme) => ({
@@ -21,9 +21,6 @@ function Footer() {
 
   return (
     <Container component="footer" className={classes.footer}>
-      <Typography variant="subtitle1">
-        Support
-      </Typography>
     </Container>
   );
 }
