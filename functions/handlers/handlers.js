@@ -33,6 +33,7 @@ const {
   validateRelease,
 } = require("../validation/validation.js");
 const {
+  convertSingleReleaseDatesToTimestamps,
   convertReleaseDatesToTimestamps,
   processLibraryNames,
   calculateReleaseState,
@@ -389,15 +390,13 @@ async function modifyRelease(req, res) {
 
     const octokit = new Octokit({auth: GITHUB_TOKEN.value()});
 
-    let releasesWithConvertedDates;
+    let release;
     try {
-      releasesWithConvertedDates = convertReleaseDatesToTimestamps(releaseData);
+      release = convertSingleReleaseDatesToTimestamps(releaseData);
     } catch (err) {
       warn("Error while converting dates to timestamps", {error: err.message});
       return res.status(500).send("Internal Server Error");
     }
-
-    const release = releasesWithConvertedDates[0];
 
     // Update the release data in Firestore
     try {
