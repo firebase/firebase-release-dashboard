@@ -109,7 +109,7 @@ function releaseToFirestoreObject(release) {
   return {
     state: RELEASE_STATES.SCHEDULED,
     releaseName: release.releaseName,
-    releaseOperator: release.releaseOperator,
+    releaseOperator: "ACore Team Member", // release.releaseOperator,
     codeFreezeDate: release.codeFreezeDate,
     releaseDate: release.releaseDate,
     snapshotBranchName: snapshotBranchName,
