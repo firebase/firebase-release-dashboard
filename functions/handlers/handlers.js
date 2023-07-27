@@ -342,98 +342,6 @@ async function getReleases(req, res) {
  * @param {Object} res - The response object to be sent to the client.
  * @return {Promise<void>}
  */
-async function modifyReleases(req, res) {
-  log("Received HTTP Request",
-      {
-        hostname: req.hostname,
-        method: req.method,
-        body: req.body,
-      });
-
-  authenticateUser(req, res, async () => {
-    if (req.method !== "POST") {
-      warn("Invalid method", {req: req});
-      return res.status(405).send("Method Not Allowed");
-    }
-
-    const releaseData = req.body.releases;
-    if (!releaseData) {
-      warn("Missing release data in request body",
-          {req: req});
-      return res.status(400).send("Invalid request");
-    }
-
-    log("Validating release data", {releaseData: releaseData});
-
-    // Verify the format of the release
-    const errors = validateNewReleases(releaseData);
-    if (errors.length > 0) {
-      warn("request validation errors", {errors: errors});
-      return res.status(400).json({errors});
-    }
-
-    const octokit = new Octokit({auth: GITHUB_TOKEN.value()});
-
-    let releasesWithConvertedDates;
-    try {
-      releasesWithConvertedDates = convertReleaseDatesToTimestamps(releaseData);
-    } catch (err) {
-      warn("Error while converting dates to timestamps", {error: err.message});
-      return res.status(400).send("Invalid request");
-    }
-
-    for (const release of releasesWithConvertedDates) {
-      // Get the release ID of the release to modify
-      let releaseId;
-      try {
-        releaseId = await getReleaseID(release.releaseName);
-        if (!releaseId) {
-          warn("Release not found in Firestore", {release: release});
-          return res.status(400).send("Invalid Request");
-        }
-      } catch (err) {
-        warn("Error getting release ID", {error: err.message});
-        return res.status(400).send("Invalid request");
-      }
-
-      // Update the release data in Firestore
-      try {
-        await updateRelease(releaseId, release);
-        log("Successfully updated release",
-            {releaseId: releaseId, release: release});
-      } catch (err) {
-        warn("Error updating release", {error: err.message});
-        return res.status(500).send("Error updating release");
-      }
-
-      // Since we've successfully updated the release, our
-      // release data is now going to be out of sync with the
-      // new release branch. To make sure that the release data
-      // is up to date, we need to sync the release state.
-      // If there are issues with the new release branch,
-      // the release state will be set to "error".
-      try {
-        await syncReleaseState(releaseId, octokit);
-        log("Successfully updated release and re-synced",
-            {releaseID: releaseId});
-      } catch (err) {
-        warn("Error re-syncing release", {error: err.message});
-        return res.status(500).send("Internal Server Error");
-      }
-    }
-
-
-    return res.status(200).send("OK");
-  });
-}
-
-/**
- * Modify the release data for a specific release.
- *
- * @param {Object} req - The request from the client.
- * @param {Object} res - The response object to be sent to the client.
- * @return {Promise<void>}
- */
 async function modifyRelease(req, res) {
   log("Received HTTP Request",
       {
@@ -708,7 +616,6 @@ module.exports = {
   addReleases,
   refreshRelease,
   getReleases,
-  modifyReleases,
   modifyRelease,
   deleteRelease,
   syncReleaseState,
