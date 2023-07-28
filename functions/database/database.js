@@ -5,7 +5,10 @@ const {
   validateNewReleasesStructure,
   validateRelease,
 } = require("../validation/validation.js");
-const {parseCommitTitleFromMessage} = require("../utils/utils.js");
+const {
+  parseCommitTitleFromMessage,
+  getCommitIdsFromReleaseReport,
+} = require("../utils/utils.js");
 const {REPO_URL} = require("../github/github.js");
 const {warn} = require("firebase-functions/logger");
 
@@ -351,6 +354,34 @@ function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
 }
 
 /**
+ * Deletes all existing change documents associated with a release that
+ * are no longer in the release, according to the release report.
+ *
+ * @param {admin.firestore.WriteBatch} batch The batch to add the
+ * delete operations to.
+ * @param {Object} releaseReport The release report containing changes by
+ * library name. The structure of the release report can be found at
+ * https://github.com/firebase/firebase-android-sdk/pull/5077#issuecomment-1591661163
+ * @param {string} releaseId The ID of the associated release.
+ * @throws {Error} If a library in the release report does not exist in
+ * Firestore.
+ */
+async function batchDeleteOldChanges(batch, releaseReport, releaseId) {
+  const previousChangesSnapshot = await db.collection("changes")
+      .where("releaseID", "==", releaseId)
+      .get();
+
+  const commitIds = getCommitIdsFromReleaseReport(releaseReport);
+
+  previousChangesSnapshot.docs.forEach((doc) => {
+    if (!commitIds.has(doc.data().commitID)) {
+      const docRef = db.collection("changes").doc(doc.id);
+      batch.delete(docRef);
+    }
+  });
+}
+
+/**
  * Creates new change documents for each change in the release report, and
  * deletes any existing changes associated with the release.
  *
@@ -364,8 +395,10 @@ function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
 async function updateChangesForRelease(releaseReport, releaseId) {
   const batch = db.batch();
 
-  await batchDeleteReleaseChanges(batch, releaseId);
+  // Delete the changes that are no longer in the release report
+  await batchDeleteOldChanges(batch, releaseReport, releaseId);
 
+  // Add the new changes for each library
   const libraryNames = Object.keys(releaseReport.changesByLibraryName);
   for (const libraryName of libraryNames) {
     const changes = releaseReport.changesByLibraryName[libraryName];
