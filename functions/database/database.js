@@ -238,9 +238,34 @@ function batchSetLibrariesForRelease(batch, libraries, releaseId) {
 }
 
 /**
+ * Deletes all existing library documents associated with a release that
+ * are no longer in the release. This only happens when a library
+ * is opted out from a release.
+ *
+ * @param {admin.firestore.WriteBatch} batch The batch to add the
+ * delete operations to.
+ * @param {Object} libraries Object mapping library names to their
+ * versions, optedIn and libraryGroupRelease flags.
+ * @param {string} releaseId The ID of the associated release.
+ */
+async function batchDeleteOptedOutLibraries(batch, libraries, releaseId) {
+  // Delete all libraries that are no longer in our set of libraries
+  const libraryNames = Object.keys(libraries);
+  const previousLibrariesSnapshot = await db.collection("libraries")
+      .where("releaseID", "==", releaseId)
+      .get();
+
+  previousLibrariesSnapshot.docs.forEach((doc) => {
+    if (!libraryNames.includes(doc.data().libraryName)) {
+      const docRef = db.collection("libraries").doc(doc.id);
+      batch.delete(docRef);
+    }
+  });
+}
+
+/**
  * Creates new library release documents for each version in the libraryVersions
- * object, and deletes any existing library versions associated with the
- * release.
+ * object, and deletes any libraries that were opted out from the release
  *
  * @param {admin.firestore.WriteBatch} libraries The batch to add the
  * delete operations to.
@@ -249,8 +274,8 @@ function batchSetLibrariesForRelease(batch, libraries, releaseId) {
 async function updateLibrariesForRelease(libraries, releaseId) {
   const batch = db.batch();
 
-  await batchDeleteReleaseLibraries(batch, releaseId);
   batchSetLibrariesForRelease(batch, libraries, releaseId);
+  await batchDeleteOptedOutLibraries(batch, libraries, releaseId);
 
   await batch.commit();
 }
