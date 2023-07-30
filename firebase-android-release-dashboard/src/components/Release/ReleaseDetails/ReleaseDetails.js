@@ -8,6 +8,7 @@ import BuildArtifacts from "../BuildArtifacts/BuildArtifacts.js";
 import GithubChecks from "../GithubChecks/index.js";
 import ReleaseLibraries from "../ReleaseLibraries/ReleaseLibraries.js";
 import useStyles from "./styles.js";
+import useLibraries from "../../../hooks/useLibraries.js";
 
 // Sort libraries alphabetically by name
 const sortLibraries = (libraries) => {
@@ -26,7 +27,8 @@ const sortLibraries = (libraries) => {
 function ReleaseDetails({release}) {
   const classes = useStyles();
 
-  const sortedLibraries = sortLibraries(release.libraries);
+  const libraries = useLibraries(release.id);
+  const sortedLibraries = sortLibraries(libraries);
 
   if (release.state === RELEASE_STATES.ERROR) {
     return (
@@ -45,7 +47,7 @@ function ReleaseDetails({release}) {
         <ReleaseLibraries libraries={sortedLibraries} />
         <Grid container justifyContent="center" alignItems="center" spacing={3}>
           <Grid item xs="auto">
-            <GithubChecks checks={release.checks} />
+            <GithubChecks releaseId={release.id} />
           </Grid>
           <Grid item xs="auto">
             <BuildArtifacts
@@ -74,20 +76,7 @@ function ReleaseDetails({release}) {
 }
 
 ReleaseDetails.propTypes = {
-  release: PropTypes.shape({
-    state: PropTypes.string.isRequired,
-    libraries: PropTypes.arrayOf(
-        PropTypes.shape({
-          libraryName: PropTypes.string.isRequired,
-        }),
-    ).isRequired,
-    checks: PropTypes.arrayOf(PropTypes.object).isRequired,
-    buildArtifactStatus: PropTypes.string,
-    buildArtifactConclusion: PropTypes.string,
-    buildArtifactLink: PropTypes.string,
-    releaseBranchLink: PropTypes.string.isRequired,
-    releaseBranchName: PropTypes.string.isRequired,
-  }).isRequired,
+  release: PropTypes.object.isRequired,
 };
 
 export default ReleaseDetails;

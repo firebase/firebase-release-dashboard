@@ -4,6 +4,7 @@ import {Link, Typography, Paper} from "@material-ui/core";
 import {Alert, AlertTitle} from "@material-ui/lab";
 import {GitCommitIcon} from "@primer/octicons-react";
 import useStyles from "./styles";
+import useChanges from "../../../hooks/useChanges";
 
 /**
  * Represents a single library item in a release.
@@ -24,13 +25,17 @@ import useStyles from "./styles";
 function ReleaseLibraryItem({library}) {
   const classes = useStyles();
 
+  console.log(library);
+
+  const changes = useChanges(library.id);
+
   const {
     libraryName,
     updatedVersion,
     optedIn,
     libraryGroupRelease,
-    changes,
   } = library;
+
 
   return (
     <Paper elevation={0} className={classes.libraryPaper}>
@@ -80,19 +85,11 @@ function ReleaseLibraryItem({library}) {
 
 ReleaseLibraryItem.propTypes = {
   library: PropTypes.shape({
+    id: PropTypes.string.isRequired,
     libraryName: PropTypes.string.isRequired,
     updatedVersion: PropTypes.string.isRequired,
     optedIn: PropTypes.bool.isRequired,
     libraryGroupRelease: PropTypes.bool.isRequired,
-    changes: PropTypes.arrayOf(
-        PropTypes.shape({
-          commitLink: PropTypes.string.isRequired,
-          commitTitle: PropTypes.string.isRequired,
-          kotlin: PropTypes.bool,
-          pullRequestLink: PropTypes.string.isRequired,
-          pullRequestID: PropTypes.string.isRequired,
-        }),
-    ).isRequired,
   }).isRequired,
 };
 

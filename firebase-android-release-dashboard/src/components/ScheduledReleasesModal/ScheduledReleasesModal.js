@@ -11,6 +11,8 @@ import {
 import {format} from "date-fns";
 import PropTypes from "prop-types";
 import React from "react";
+import {RELEASE_STATES} from "../../utils/releaseStates";
+import useReleases from "../../hooks/useReleases";
 import useStyles from "./styles";
 
 // Constants for table headers
@@ -35,8 +37,9 @@ const tableHeaders = [
  *
  * @return {JSX.Element} The rendered component
  */
-function ScheduledReleasesModal({open, handleClose, scheduledReleases}) {
+function ScheduledReleasesModal({open, handleClose}) {
   const classes = useStyles();
+  const scheduledReleases = useReleases(RELEASE_STATES.SCHEDULED, null);
 
   return (
     <Modal
@@ -87,15 +90,6 @@ function ScheduledReleasesModal({open, handleClose, scheduledReleases}) {
 ScheduledReleasesModal.propTypes = {
   open: PropTypes.bool.isRequired,
   handleClose: PropTypes.func.isRequired,
-  scheduledReleases: PropTypes.arrayOf(
-      PropTypes.shape({
-        releaseName: PropTypes.string.isRequired,
-        codeFreezeDate: PropTypes.string.isRequired,
-        releaseDate: PropTypes.string.isRequired,
-        releaseBranchName: PropTypes.string.isRequired,
-        state: PropTypes.string.isRequired,
-      }),
-  ).isRequired,
 };
 
 export default ScheduledReleasesModal;

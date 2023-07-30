@@ -4,19 +4,21 @@ import {
 import {MarkGithubIcon} from "@primer/octicons-react";
 import PropTypes from "prop-types";
 import React, {useState} from "react";
+import useChecks from "../../../hooks/useChecks";
 import ChecksDialog from "../ChecksDialog";
 import useStyles from "./styles";
 
 /**
  * Component showing a button that opens a dialog with all Github checks.
  *
- * @param {Object} props - The component props.
- * @param {Array} props.checks - Array of checks to be displayed.
+ * @param {Object} releaseId - The ID of the release.
  * @return {JSX.Element} A button to open a dialog with all checks.
  */
-function GithubChecks({checks}) {
+function GithubChecks({releaseId}) {
   const classes = useStyles();
   const [openDialog, setOpenDialog] = useState(false);
+
+  const checks = useChecks(releaseId);
 
   const handleClickOpen = () => {
     setOpenDialog(true);
@@ -43,7 +45,7 @@ function GithubChecks({checks}) {
 }
 
 GithubChecks.propTypes = {
-  checks: PropTypes.array.isRequired,
+  releaseId: PropTypes.string.isRequired,
 };
 
 export default GithubChecks;

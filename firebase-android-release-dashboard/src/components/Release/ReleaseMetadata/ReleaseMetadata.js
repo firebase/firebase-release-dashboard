@@ -27,12 +27,7 @@ const chipColor = (state) => {
  * Represents the metadata of a single release.
  *
  * @component
- * @param {Object} props - The component props.
- * @param {Object} props.release - The release details.
- * @param {String} props.release.releaseName - The name of the release.
- * @param {String} props.release.releaseDate - The release date.
- * @param {String} props.release.codeFreezeDate - The code freeze date.
- * @param {String} props.release.state - The state of the release.
+ * @param {Object} release - The release to render.
  * @return {JSX.Element} The ReleaseMetadata component.
  */
 function ReleaseMetadata({release}) {
@@ -62,7 +57,7 @@ function ReleaseMetadata({release}) {
           color="textPrimary"
           className={classes.metadataItem}
         >
-          {format(new Date(codeFreezeDate), "MMM. dd, yyyy")}
+          {format(codeFreezeDate, "MMM. dd, yyyy")}
         </Typography>
       </Grid>
       <Grid item xs={3}>
@@ -71,7 +66,7 @@ function ReleaseMetadata({release}) {
           color="textPrimary"
           className={classes.metadataItem}
         >
-          {format(new Date(releaseDate), "MMM. dd, yyyy")}
+          {format(releaseDate, "MMM. dd, yyyy")}
         </Typography>
       </Grid>
       <Grid item xs={3}>
@@ -88,8 +83,8 @@ function ReleaseMetadata({release}) {
 ReleaseMetadata.propTypes = {
   release: PropTypes.shape({
     releaseName: PropTypes.string.isRequired,
-    releaseDate: PropTypes.string.isRequired,
-    codeFreezeDate: PropTypes.string.isRequired,
+    releaseDate: PropTypes.any.isRequired,
+    codeFreezeDate: PropTypes.any.isRequired,
     state: PropTypes.oneOf(
         ["code freeze", "release day", "released", "delayed", "error"],
     ).isRequired,
