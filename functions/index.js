@@ -19,20 +19,16 @@ const GITHUB_TOKEN = defineSecret("GITHUB_TOKEN");
 const GITHUB_WEBHOOK_SECRET = defineSecret("GITHUB_WEBHOOK_SECRET");
 
 exports.addReleases = functions.https.onRequest(
-    {cors: true},
-    {secrets: [GITHUB_TOKEN]},
+    {cors: true, secrets: [GITHUB_TOKEN]},
     addReleases);
 exports.getReleases = functions.https.onRequest({cors: true}, getReleases);
 exports.modifyReleases = functions.https.onRequest(
-    {cors: true},
-    {secrets: [GITHUB_TOKEN]},
+    {cors: true, secrets: [GITHUB_TOKEN]},
     modifyReleases);
 exports.refreshRelease = functions.https.onRequest(
-    {cors: true},
-    {secrets: [GITHUB_TOKEN]},
+    {cors: true, secrets: [GITHUB_TOKEN]},
     refreshRelease);
 exports.deleteRelease = functions.https.onRequest({cors: true}, deleteRelease);
 exports.githubWebhook = functions.https.onRequest(
-    {cors: true},
-    {secrets: [GITHUB_TOKEN, GITHUB_WEBHOOK_SECRET]},
+    {cors: true, secrets: [GITHUB_TOKEN, GITHUB_WEBHOOK_SECRET]},
     githubWebhook);
