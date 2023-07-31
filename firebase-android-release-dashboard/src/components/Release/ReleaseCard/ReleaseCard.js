@@ -16,8 +16,6 @@ import useStyles from "./styles.js";
  * re-render when the release changes.
  *
  * @param {Object} releaseId - The id of the release to render.
- * @throws {Error} If the release state is not recognized.
- *
  * @return {JSX.Element} The rendered component.
  */
 function ReleaseCard({releaseId}) {

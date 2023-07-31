@@ -32,9 +32,6 @@ const tableHeaders = [
  * @param {boolean} props.open If true, the modal is open. Otherwise, it is
  * closed.
  * @param {Function} props.handleClose Function to close the modal.
- * @param {Array} props.scheduledReleases List of scheduled releases to display
- * in the table.
- *
  * @return {JSX.Element} The rendered component
  */
 function ScheduledReleasesModal({open, handleClose}) {

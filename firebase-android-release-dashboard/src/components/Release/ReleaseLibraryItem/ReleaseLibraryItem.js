@@ -9,17 +9,15 @@ import useChanges from "../../../hooks/useChanges";
 /**
  * Represents a single library item in a release.
  *
- * @param {Object} props - The component props.
- * @param {Object} props.library - The library details.
- * @param {String} props.library.libraryName - The name of the library.
- * @param {String} props.library.updatedVersion - The updated version of the
+ * @param {Object} library - The library details.
+ * @param {String} library.id - The ID of the library.
+ * @param {String} library.libraryName - The name of the library.
+ * @param {String} library.updatedVersion - The updated version of the
  * library.
- * @param {Boolean} props.library.optedIn - Whether the library was manually
+ * @param {Boolean} library.optedIn - Whether the library was manually
  * opted into the release.
- * @param {Boolean} props.library.libraryGroupRelease - Whether the library
+ * @param {Boolean} library.libraryGroupRelease - Whether the library
  * was included to keep version alignment with other libraries.
- * @param {Array} props.library.changes - An array of change objects with
- * commitLink, commitTitle, kotlin, pullRequestLink, pullRequestID.
  * @return {JSX.Element} The ReleaseLibraryItem component.
  */
 function ReleaseLibraryItem({library}) {

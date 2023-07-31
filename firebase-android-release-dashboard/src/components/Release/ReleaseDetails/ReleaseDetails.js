@@ -22,6 +22,18 @@ const sortLibraries = (libraries) => {
  * All releases that are not in the "scheduled" state have release data.
  *
  * @param {Object} release - An object containing release details.
+ * @param {String} release.id - The id of the release.
+ * @param {String} release.releaseName - The name of the release.
+ * @param {Date} release.releaseDate - The date of the release.
+ * @param {Date} release.codeFreezeDate - The date of the code freeze.
+ * @param {String} release.state - The state of the release.
+ * @param {String} release.releaseBranchName - The name of the release branch.
+ * @param {String} release.releaseBranchLink - The link to the release branch.
+ * @param {String} release.buildArtifactStatus - The status of the build
+ * artifact.
+ * @param {String} release.buildArtifactConclusion - The conclusion of the
+ * build artifact.
+ * @param {String} release.buildArtifactLink - The link to the build artifact.
  * @return {JSX.Element} The rendered JSX element.
  */
 function ReleaseDetails({release}) {
@@ -76,7 +88,18 @@ function ReleaseDetails({release}) {
 }
 
 ReleaseDetails.propTypes = {
-  release: PropTypes.object.isRequired,
+  release: PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    releaseName: PropTypes.string.isRequired,
+    releaseDate: PropTypes.instanceOf(Date).isRequired,
+    codeFreezeDate: PropTypes.instanceOf(Date).isRequired,
+    state: PropTypes.oneOf(Object.values(RELEASE_STATES)).isRequired,
+    releaseBranchName: PropTypes.string.isRequired,
+    releaseBranchLink: PropTypes.string.isRequired,
+    buildArtifactStatus: PropTypes.string.isRequired,
+    buildArtifactConclusion: PropTypes.string.isRequired,
+    buildArtifactLink: PropTypes.string.isRequired,
+  }).isRequired,
 };
 
 export default ReleaseDetails;

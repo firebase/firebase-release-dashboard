@@ -28,6 +28,10 @@ const chipColor = (state) => {
  *
  * @component
  * @param {Object} release - The release to render.
+ * @param {String} release.releaseName - The name of the release.
+ * @param {Date} release.releaseDate - The date of the release.
+ * @param {Date} release.codeFreezeDate - The date of the code freeze.
+ * @param {String} release.state - The state of the release.
  * @return {JSX.Element} The ReleaseMetadata component.
  */
 function ReleaseMetadata({release}) {
@@ -83,11 +87,9 @@ function ReleaseMetadata({release}) {
 ReleaseMetadata.propTypes = {
   release: PropTypes.shape({
     releaseName: PropTypes.string.isRequired,
-    releaseDate: PropTypes.any.isRequired,
-    codeFreezeDate: PropTypes.any.isRequired,
-    state: PropTypes.oneOf(
-        ["code freeze", "release day", "released", "delayed", "error"],
-    ).isRequired,
+    releaseDate: PropTypes.instanceOf(Date).isRequired,
+    codeFreezeDate: PropTypes.instanceOf(Date).isRequired,
+    state: PropTypes.oneOf(Object.values(RELEASE_STATES)).isRequired,
   }).isRequired,
 };
 

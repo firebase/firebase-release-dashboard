@@ -11,10 +11,10 @@ import ViewScheduledReleasesButton from
   "../ViewScheduledReleasesButton/ViewScheduledReleasesButton";
 
 /**
- * MainContent displays a search bar and a list of releases.
+ * MainContent displays a list of releases, and a button to view scheduled
+ * releases in a modal.
  *
- * @param {Object[]} props.releases - The list of releases to display.
- * @return {JSX.Element}
+ * @return {JSX.Element} The MainContent component.
  */
 function MainContent() {
   const [modalOpen, setModalOpen] = useState(false);
