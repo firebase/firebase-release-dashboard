@@ -8,7 +8,7 @@ const {
   addReleases,
   refreshRelease,
   getReleases,
-  modifyReleases,
+  modifyRelease,
   deleteRelease,
 } = require("./handlers/handlers.js");
 const {
@@ -22,9 +22,9 @@ exports.addReleases = functions.https.onRequest(
     {cors: true, secrets: [GITHUB_TOKEN]},
     addReleases);
 exports.getReleases = functions.https.onRequest({cors: true}, getReleases);
-exports.modifyReleases = functions.https.onRequest(
+exports.modifyRelease = functions.https.onRequest(
     {cors: true, secrets: [GITHUB_TOKEN]},
-    modifyReleases);
+    modifyRelease);
 exports.refreshRelease = functions.https.onRequest(
     {cors: true, secrets: [GITHUB_TOKEN]},
     refreshRelease);

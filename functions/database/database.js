@@ -13,6 +13,21 @@ const {REPO_URL} = require("../github/github.js");
 const {warn} = require("firebase-functions/logger");
 
 /**
+ * Check if a release document with a given releaseId exists in Firestore.
+ *
+ * @param {string} releaseId - The ID of the release to check
+ * @return {Promise<boolean>} - A promise that resolves to true if the
+ * release exists, false otherwise.
+ */
+async function releaseExists(releaseId) {
+  const releaseSnapshot = await db.collection("releases")
+      .doc(releaseId)
+      .get();
+
+  return releaseSnapshot.exists;
+}
+
+/**
  * Retrieve the release ID of the Firestore release document
  * with a given release name.
  *
@@ -518,6 +533,7 @@ async function deleteAllReleaseData(releaseId) {
 }
 
 module.exports = {
+  releaseExists,
   setReleases,
   getReleaseID,
   getReleaseIdFromBranch,
