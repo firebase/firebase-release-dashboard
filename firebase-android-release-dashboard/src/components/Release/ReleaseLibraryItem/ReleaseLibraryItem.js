@@ -25,8 +25,6 @@ import useChanges from "../../../hooks/useChanges";
 function ReleaseLibraryItem({library}) {
   const classes = useStyles();
 
-  console.log(library);
-
   const changes = useChanges(library.id);
 
   const {
@@ -35,7 +33,6 @@ function ReleaseLibraryItem({library}) {
     optedIn,
     libraryGroupRelease,
   } = library;
-
 
   return (
     <Paper elevation={0} className={classes.libraryPaper}>
@@ -60,13 +57,13 @@ function ReleaseLibraryItem({library}) {
         </Alert>
       ) : (
         changes.map(
-            ({commitLink, commitTitle, kotlin,
+            ({commitLink, commitTitle,
               pullRequestLink, pullRequestID}, index) => (
               <Typography variant="body2" color="textPrimary" key={index}>
                 <Link href={commitLink} target="_blank" rel="noreferrer">
                   <GitCommitIcon className={classes.icon} size={16} />
                 </Link>
-                {commitTitle} {kotlin && " (Kotlin) "}
+                {commitTitle}
             (
                 <Link
                   href={pullRequestLink}
