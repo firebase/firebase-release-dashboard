@@ -329,21 +329,20 @@ function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
  * Creates new change documents for each change in the release report, and
  * deletes any existing changes associated with the release.
  *
- * @param {Object} releaseReport The release report containing changes by
- * library name. The structure of the release report can be found at
- * https://github.com/firebase/firebase-android-sdk/pull/5077#issuecomment-1591661163
+ * @param {Map<string, Array<Object>>} libraryChanges Map of library names
+ * to changes.
  * @param {string} releaseId The ID of the associated release.
  * @throws {Error} If a library in the release report does not exist in
  * Firestore.
  */
-async function updateChangesForRelease(releaseReport, releaseId) {
+async function updateChangesForRelease(libraryChanges, releaseId) {
   const batch = db.batch();
 
   await batchDeleteReleaseChanges(batch, releaseId);
 
-  const libraryNames = Object.keys(releaseReport.changesByLibraryName);
+  const libraryNames = Object.keys(libraryChanges);
   for (const libraryName of libraryNames) {
-    const changes = releaseReport.changesByLibraryName[libraryName];
+    const changes = libraryChanges[libraryName];
     const libraryId = await getLibraryId(libraryName);
     batchSetReleaseChanges(batch, changes, libraryId, releaseId);
   }

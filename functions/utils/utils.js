@@ -139,6 +139,46 @@ function parseCommitTitleFromMessage(message) {
   throw new Error(`Unable to extract commit title from message: ${message}`);
 }
 
+/**
+ * Merges '/ktx' submodules data into root libraries.
+ *
+ * @param {Object} libraryData - The object containing library data, where each
+ * key is a library name, and the value is an array of changes.
+ * @return {Object} The updated library data with '/ktx' changes merged
+ * into root libraries and '/ktx' entries removed.
+ */
+function mergeKtxIntoRoot(libraryData) {
+  for (const key in libraryData) {
+    if (key.includes("/ktx")) {
+      const rootKey = key.split("/")[0];
+
+      // If the root library exists, merge the '/ktx' data into it
+      // otherwise, create a new root library with the '/ktx' data
+      if (libraryData[rootKey]) {
+        libraryData[rootKey] = [...libraryData[rootKey], ...libraryData[key]];
+      } else {
+        libraryData[rootKey] = libraryData[key];
+      }
+
+      // Remove the '/ktx' library from the object
+      delete libraryData[key];
+    }
+  }
+
+  return libraryData;
+}
+
+/**
+ * Filters out '/ktx' submodules from an array of library names.
+ *
+ * @param {Array} libaries - The array containing library names.
+ * @return {Array} The updated array of library names without any '/ktx'
+ * submodules.
+ */
+function filterOutKtx(libaries) {
+  return libaries.filter((library) => !library.includes("/ktx"));
+}
+
 module.exports = {
   convertDateToTimestamp,
   convertReleaseDatesToTimestamps,
@@ -146,4 +186,6 @@ module.exports = {
   calculateReleaseState,
   processLibraryNames,
   parseCommitTitleFromMessage,
+  mergeKtxIntoRoot,
+  filterOutKtx,
 };

@@ -31,6 +31,8 @@ const {
   convertReleaseDatesToTimestamps,
   processLibraryNames,
   calculateReleaseState,
+  filterOutKtx,
+  mergeKtxIntoRoot,
 } = require("../utils/utils.js");
 const {authenticateUser} = require("../utils/auth.js");
 const RELEASE_STATES = require("../utils/releaseStates.js");
@@ -502,12 +504,18 @@ async function syncReleaseState(releaseId, octokit) {
     // Process the library names to get correct format
     processLibraryNames(releaseConfig);
 
+    const libraryNames = filterOutKtx(releaseConfig.libraries);
+    const libraryChanges = mergeKtxIntoRoot(releaseReport.changesByLibraryName);
+
+    log("Processed data",
+        {libraryNames: libraryNames, libraryChanges: libraryChanges});
+
     // For each library in the release config, extract the version
     const libraryMetadata = await getLibraryMetadata(
         octokit,
         releaseData.releaseBranchName,
-        releaseReport,
-        releaseConfig,
+        libraryNames,
+        libraryChanges,
     );
 
     // Get the status of the check suite running on the release branch
@@ -533,7 +541,7 @@ async function syncReleaseState(releaseId, octokit) {
     // to be updated first. If we do this in parallel we might
     // create a change for a library that doesn't exist yet,
     // which will cause an error.
-    await updateChangesForRelease(releaseReport, releaseId);
+    await updateChangesForRelease(libraryChanges, releaseId);
 
     const updatedReleaseData = {
       state: releaseState,
