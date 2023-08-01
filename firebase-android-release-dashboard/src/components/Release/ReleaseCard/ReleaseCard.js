@@ -1,4 +1,4 @@
-import {Card, CardContent, Divider} from "@material-ui/core";
+import {Card, CardContent, CircularProgress, Divider} from "@material-ui/core";
 import PropTypes from "prop-types";
 import React from "react";
 import useRelease from "../../../hooks/useRelease";
@@ -23,7 +23,7 @@ function ReleaseCard({releaseId}) {
   const release = useRelease(releaseId);
 
   if (!release) {
-    return null;
+    return <CircularProgress />;
   }
 
   return (
