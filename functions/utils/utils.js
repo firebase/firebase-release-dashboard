@@ -67,10 +67,8 @@ function calculateReleaseState(codeFreeze, release, isComplete) {
   const diffDaysCodeFreeze = Math.ceil(diffCodeFreeze / (1000 * 60 * 60 * 24));
   const diffDaysRelease = Math.ceil(diffRelease / (1000 * 60 * 60 * 24));
 
-  if (diffDaysCodeFreeze > 2) {
+  if (diffDaysCodeFreeze > 0) {
     return RELEASE_STATES.SCHEDULED;
-  } else if (diffDaysCodeFreeze <= 2 && diffDaysCodeFreeze > 0) {
-    return RELEASE_STATES.UPCOMING;
   } else if (diffDaysCodeFreeze <= 0 && diffDaysRelease > 0) {
     return RELEASE_STATES.CODE_FREEZE;
   } else if (diffDaysCodeFreeze < 0 && diffDaysRelease === 0) {
@@ -140,6 +138,23 @@ function parseCommitTitleFromMessage(message) {
 }
 
 /**
+ * Gets the set of commit IDs from changes.
+ *
+ * @param {Map<string, Array<Object>>} libraryChanges Map of library names
+ * to changes.
+ * @return {Set<string>} The set of commit IDs from the release report.
+ */
+function getCommitIdsFromChanges(libraryChanges) {
+  const commitIds = new Set();
+  const libraryNames = Object.keys(libraryChanges);
+  for (const libraryName of libraryNames) {
+    const changes = libraryChanges[libraryName];
+    changes.forEach((change) => commitIds.add(change.commitId));
+  }
+  return commitIds;
+}
+
+/**
  * Merges '/ktx' submodules data into root libraries.
  *
  * @param {Object} libraryData - The object containing library data, where each
@@ -188,4 +203,5 @@ module.exports = {
   parseCommitTitleFromMessage,
   mergeKtxIntoRoot,
   filterOutKtx,
+  getCommitIdsFromChanges,
 };
