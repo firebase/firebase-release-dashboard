@@ -67,10 +67,8 @@ function calculateReleaseState(codeFreeze, release, isComplete) {
   const diffDaysCodeFreeze = Math.ceil(diffCodeFreeze / (1000 * 60 * 60 * 24));
   const diffDaysRelease = Math.ceil(diffRelease / (1000 * 60 * 60 * 24));
 
-  if (diffDaysCodeFreeze > 2) {
+  if (diffDaysCodeFreeze > 0) {
     return RELEASE_STATES.SCHEDULED;
-  } else if (diffDaysCodeFreeze <= 2 && diffDaysCodeFreeze > 0) {
-    return RELEASE_STATES.UPCOMING;
   } else if (diffDaysCodeFreeze <= 0 && diffDaysRelease > 0) {
     return RELEASE_STATES.CODE_FREEZE;
   } else if (diffDaysCodeFreeze < 0 && diffDaysRelease === 0) {
@@ -139,6 +137,23 @@ function parseCommitTitleFromMessage(message) {
   throw new Error(`Unable to extract commit title from message: ${message}`);
 }
 
+/**
+ * Helper function to get all commit ids from a release report
+ *
+ * @param {Object} releaseReport The release report containing changes by
+ * library name.
+ * @return {Set<string>} A set of all commit ids.
+ */
+function getCommitIdsFromReleaseReport(releaseReport) {
+  const commitIds = new Set();
+  const libraryNames = Object.keys(releaseReport.changesByLibraryName);
+  for (const libraryName of libraryNames) {
+    const changes = releaseReport.changesByLibraryName[libraryName];
+    changes.forEach((change) => commitIds.add(change.commitId));
+  }
+  return commitIds;
+}
+
 module.exports = {
   convertDateToTimestamp,
   convertReleaseDatesToTimestamps,
@@ -146,4 +161,5 @@ module.exports = {
   calculateReleaseState,
   processLibraryNames,
   parseCommitTitleFromMessage,
+  getCommitIdsFromReleaseReport,
 };

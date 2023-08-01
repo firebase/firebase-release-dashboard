@@ -5,9 +5,27 @@ const {
   validateNewReleasesStructure,
   validateRelease,
 } = require("../validation/validation.js");
-const {parseCommitTitleFromMessage} = require("../utils/utils.js");
+const {
+  parseCommitTitleFromMessage,
+  getCommitIdsFromReleaseReport,
+} = require("../utils/utils.js");
 const {REPO_URL} = require("../github/github.js");
 const {warn} = require("firebase-functions/logger");
+
+/**
+ * Check if a release document with a given releaseId exists in Firestore.
+ *
+ * @param {string} releaseId - The ID of the release to check
+ * @return {Promise<boolean>} - A promise that resolves to true if the
+ * release exists, false otherwise.
+ */
+async function releaseExists(releaseId) {
+  const releaseSnapshot = await db.collection("releases")
+      .doc(releaseId)
+      .get();
+
+  return releaseSnapshot.exists;
+}
 
 /**
  * Retrieve the release ID of the Firestore release document
@@ -109,7 +127,7 @@ function releaseToFirestoreObject(release) {
   return {
     state: RELEASE_STATES.SCHEDULED,
     releaseName: release.releaseName,
-    releaseOperator: release.releaseOperator,
+    releaseOperator: "ACore Team Member", // release.releaseOperator,
     codeFreezeDate: release.codeFreezeDate,
     releaseDate: release.releaseDate,
     snapshotBranchName: snapshotBranchName,
@@ -238,9 +256,34 @@ function batchSetLibrariesForRelease(batch, libraries, releaseId) {
 }
 
 /**
+ * Deletes all existing library documents associated with a release that
+ * are no longer in the release. This only happens when a library
+ * is opted out from a release.
+ *
+ * @param {admin.firestore.WriteBatch} batch The batch to add the
+ * delete operations to.
+ * @param {Object} libraries Object mapping library names to their
+ * versions, optedIn and libraryGroupRelease flags.
+ * @param {string} releaseId The ID of the associated release.
+ */
+async function batchDeleteOptedOutLibraries(batch, libraries, releaseId) {
+  // Delete all libraries that are no longer in our set of libraries
+  const libraryNames = Object.keys(libraries);
+  const previousLibrariesSnapshot = await db.collection("libraries")
+      .where("releaseID", "==", releaseId)
+      .get();
+
+  previousLibrariesSnapshot.docs.forEach((doc) => {
+    if (!libraryNames.includes(doc.data().libraryName)) {
+      const docRef = db.collection("libraries").doc(doc.id);
+      batch.delete(docRef);
+    }
+  });
+}
+
+/**
  * Creates new library release documents for each version in the libraryVersions
- * object, and deletes any existing library versions associated with the
- * release.
+ * object, and deletes any libraries that were opted out from the release
  *
  * @param {admin.firestore.WriteBatch} libraries The batch to add the
  * delete operations to.
@@ -249,8 +292,8 @@ function batchSetLibrariesForRelease(batch, libraries, releaseId) {
 async function updateLibrariesForRelease(libraries, releaseId) {
   const batch = db.batch();
 
-  await batchDeleteReleaseLibraries(batch, releaseId);
   batchSetLibrariesForRelease(batch, libraries, releaseId);
+  await batchDeleteOptedOutLibraries(batch, libraries, releaseId);
 
   await batch.commit();
 }
@@ -326,6 +369,34 @@ function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
 }
 
 /**
+ * Deletes all existing change documents associated with a release that
+ * are no longer in the release, according to the release report.
+ *
+ * @param {admin.firestore.WriteBatch} batch The batch to add the
+ * delete operations to.
+ * @param {Object} releaseReport The release report containing changes by
+ * library name. The structure of the release report can be found at
+ * https://github.com/firebase/firebase-android-sdk/pull/5077#issuecomment-1591661163
+ * @param {string} releaseId The ID of the associated release.
+ * @throws {Error} If a library in the release report does not exist in
+ * Firestore.
+ */
+async function batchDeleteOldChanges(batch, releaseReport, releaseId) {
+  const previousChangesSnapshot = await db.collection("changes")
+      .where("releaseID", "==", releaseId)
+      .get();
+
+  const commitIds = getCommitIdsFromReleaseReport(releaseReport);
+
+  previousChangesSnapshot.docs.forEach((doc) => {
+    if (!commitIds.has(doc.data().commitID)) {
+      const docRef = db.collection("changes").doc(doc.id);
+      batch.delete(docRef);
+    }
+  });
+}
+
+/**
  * Creates new change documents for each change in the release report, and
  * deletes any existing changes associated with the release.
  *
@@ -339,8 +410,10 @@ function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
 async function updateChangesForRelease(releaseReport, releaseId) {
   const batch = db.batch();
 
-  await batchDeleteReleaseChanges(batch, releaseId);
+  // Delete the changes that are no longer in the release report
+  await batchDeleteOldChanges(batch, releaseReport, releaseId);
 
+  // Add the new changes for each library
   const libraryNames = Object.keys(releaseReport.changesByLibraryName);
   for (const libraryName of libraryNames) {
     const changes = releaseReport.changesByLibraryName[libraryName];
@@ -437,7 +510,30 @@ async function updateCheckRunStatus(checkRunId, headSHA, status, conclusion) {
   });
 }
 
+/**
+ * Deletes all data associated with a release.
+ *
+ * @param {string} releaseId The ID of the release to delete.
+ * @return {Promise<void>} A promise that resolves when the release
+ * data has been deleted.
+ */
+async function deleteAllReleaseData(releaseId) {
+  const batch = db.batch();
+
+  // Delete all the data associated with the release
+  await batchDeleteReleaseLibraries(batch, releaseId);
+  await batchDeleteReleaseChanges(batch, releaseId);
+  await batchDeleteReleaseChecks(batch, releaseId);
+
+  // Delete the release itself
+  const releaseDoc = db.collection("releases").doc(releaseId);
+  batch.delete(releaseDoc);
+
+  await batch.commit();
+}
+
 module.exports = {
+  releaseExists,
   setReleases,
   getReleaseID,
   getReleaseIdFromBranch,
@@ -448,4 +544,5 @@ module.exports = {
   updateChecksForRelease,
   getReleaseData,
   updateCheckRunStatus,
+  deleteAllReleaseData,
 };
