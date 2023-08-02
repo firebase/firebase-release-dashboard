@@ -8,6 +8,7 @@ import BuildArtifacts from "../BuildArtifacts/BuildArtifacts.js";
 import GithubChecks from "../GithubChecks/index.js";
 import ReleaseLibraries from "../ReleaseLibraries/ReleaseLibraries.js";
 import useStyles from "./styles.js";
+import useLibraries from "../../../hooks/useLibraries.js";
 
 // Sort libraries alphabetically by name
 const sortLibraries = (libraries) => {
@@ -21,12 +22,25 @@ const sortLibraries = (libraries) => {
  * All releases that are not in the "scheduled" state have release data.
  *
  * @param {Object} release - An object containing release details.
+ * @param {String} release.id - The id of the release.
+ * @param {String} release.releaseName - The name of the release.
+ * @param {Date} release.releaseDate - The date of the release.
+ * @param {Date} release.codeFreezeDate - The date of the code freeze.
+ * @param {String} release.state - The state of the release.
+ * @param {String} release.releaseBranchName - The name of the release branch.
+ * @param {String} release.releaseBranchLink - The link to the release branch.
+ * @param {String} release.buildArtifactStatus - The status of the build
+ * artifact.
+ * @param {String} release.buildArtifactConclusion - The conclusion of the
+ * build artifact.
+ * @param {String} release.buildArtifactLink - The link to the build artifact.
  * @return {JSX.Element} The rendered JSX element.
  */
 function ReleaseDetails({release}) {
   const classes = useStyles();
 
-  const sortedLibraries = sortLibraries(release.libraries);
+  const libraries = useLibraries(release.id);
+  const sortedLibraries = sortLibraries(libraries);
 
   if (release.state === RELEASE_STATES.ERROR) {
     return (
@@ -45,7 +59,7 @@ function ReleaseDetails({release}) {
         <ReleaseLibraries libraries={sortedLibraries} />
         <Grid container justifyContent="center" alignItems="center" spacing={3}>
           <Grid item xs="auto">
-            <GithubChecks checks={release.checks} />
+            <GithubChecks releaseId={release.id} />
           </Grid>
           <Grid item xs="auto">
             <BuildArtifacts
@@ -75,18 +89,16 @@ function ReleaseDetails({release}) {
 
 ReleaseDetails.propTypes = {
   release: PropTypes.shape({
-    state: PropTypes.string.isRequired,
-    libraries: PropTypes.arrayOf(
-        PropTypes.shape({
-          libraryName: PropTypes.string.isRequired,
-        }),
-    ).isRequired,
-    checks: PropTypes.arrayOf(PropTypes.object).isRequired,
-    buildArtifactStatus: PropTypes.string,
-    buildArtifactConclusion: PropTypes.string,
-    buildArtifactLink: PropTypes.string,
-    releaseBranchLink: PropTypes.string.isRequired,
+    id: PropTypes.string.isRequired,
+    releaseName: PropTypes.string.isRequired,
+    releaseDate: PropTypes.instanceOf(Date).isRequired,
+    codeFreezeDate: PropTypes.instanceOf(Date).isRequired,
+    state: PropTypes.oneOf(Object.values(RELEASE_STATES)).isRequired,
     releaseBranchName: PropTypes.string.isRequired,
+    releaseBranchLink: PropTypes.string.isRequired,
+    buildArtifactStatus: PropTypes.string.isRequired,
+    buildArtifactConclusion: PropTypes.string.isRequired,
+    buildArtifactLink: PropTypes.string.isRequired,
   }).isRequired,
 };
 

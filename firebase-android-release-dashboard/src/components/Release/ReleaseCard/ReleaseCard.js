@@ -1,6 +1,7 @@
-import {Card, CardContent, Divider} from "@material-ui/core";
+import {Card, CardContent, CircularProgress, Divider} from "@material-ui/core";
 import PropTypes from "prop-types";
 import React from "react";
+import useRelease from "../../../hooks/useRelease";
 import ReleaseDetails from "../ReleaseDetails";
 import ReleaseMetadata from "../ReleaseMetadata";
 import useStyles from "./styles.js";
@@ -9,13 +10,21 @@ import useStyles from "./styles.js";
  * The ReleaseCard component renders a card containing the metadata
  * and details of a release.
  *
- * @param {Object} release - The details of the release to render.
- * @throws {Error} If the release state is not recognized.
+ * The release is fetched from Firestore using the useRelease hook.
+ * We don't pass the whole release as a prop to the ReleaseCard
+ * component because we want to be able to have the component
+ * re-render when the release changes.
  *
+ * @param {Object} releaseId - The id of the release to render.
  * @return {JSX.Element} The rendered component.
  */
-function ReleaseCard({release}) {
+function ReleaseCard({releaseId}) {
   const classes = useStyles();
+  const release = useRelease(releaseId);
+
+  if (!release) {
+    return <CircularProgress />;
+  }
 
   return (
     <Card className={classes.root}>
@@ -29,16 +38,7 @@ function ReleaseCard({release}) {
 }
 
 ReleaseCard.propTypes = {
-  release: PropTypes.shape({
-    state: PropTypes.string.isRequired,
-    libraries: PropTypes.arrayOf(PropTypes.shape({
-      libraryName: PropTypes.string.isRequired,
-    })).isRequired,
-    checks: PropTypes.arrayOf(PropTypes.object).isRequired,
-    buildArtifactStatus: PropTypes.string,
-    buildArtifactConclusion: PropTypes.string,
-    buildArtifactLink: PropTypes.string,
-  }).isRequired,
+  releaseId: PropTypes.any.isRequired,
 };
 
 export default ReleaseCard;

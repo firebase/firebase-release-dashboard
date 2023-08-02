@@ -6,7 +6,6 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import MainContent from "./components/MainContent";
 import theme from "./config/theme";
-import releases from "./releases.json";
 import {loadGoogleFont} from "./services/fontLoader";
 import {useAuthentication} from "./hooks/useAuthentication";
 
@@ -28,7 +27,7 @@ function App() {
         <CssBaseline />
         <Box>
           <Header isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn}/>
-          <MainContent releases={releases}/>
+          <MainContent/>
           <Footer />
         </Box>
       </ThemeProvider>

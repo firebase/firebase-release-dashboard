@@ -1,5 +1,6 @@
 import {initializeApp} from "firebase/app";
 import {EmailAuthProvider, getAuth} from "firebase/auth";
+import {getFirestore} from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_API_KEY,
@@ -16,6 +17,8 @@ const app = initializeApp(firebaseConfig);
 // Initialize the Firebase Authentication service for the app instance
 const auth = getAuth(app);
 
+const db = getFirestore(app);
+
 // Enable emulator connection for testing purposes.
 // Connect to the Firebase Auth Emulator when running app locally.
 // Uncomment the following line to enable auth emulator.
@@ -26,4 +29,4 @@ const auth = getAuth(app);
  * `auth` is the Firebase Authentication service instance for the app,
  * `EmailAuthProvider` is the Firebase Authentication Email/Password provider.
  */
-export {app, auth, EmailAuthProvider};
+export {app, auth, EmailAuthProvider, db};

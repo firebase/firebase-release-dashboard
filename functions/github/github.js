@@ -133,25 +133,33 @@ async function getReleaseReport(octokit, releaseData) {
  * it was not originally part of the release report, but has been manually opted
  * in by being added to the release configuration.
  *
+ * Fetches and returns metadata for each library in the release according
+ * to the list of libraries in libraryNames. The metadata includes the updated
+ * version, whether the library is opted in to the release, and whether the
+ * library is a part of a group release. A library is a part of a group release
+ * if it is part of the release but has no changes.
+ * A library is opted in if it is not in the libraryChanges, but is in the
+ * libraryNames.
+ *
  * @param {Octokit} octokit - The authenticated Octokit client.
  * @param {string} releaseBranchName - The release branch name
- * @param {Object} releaseReport - The release report
- * @param {Object} releaseConfig - The release configuration with the processed
- * library names.
+ * @param {Array<string>} libraryNames - The release report
+ * @param {Map<string, Array<Object>>} libraryChanges - A map of library names
+ * to a list of changes.
  * @return {Promise<Object>} A promise that resolves to an object mapping
  * library names to metadata.
  */
 async function getLibraryMetadata(
     octokit,
     releaseBranchName,
-    releaseReport,
-    releaseConfig,
+    libraryNames,
+    libraryChanges,
 ) {
   const libraryMetadata = {};
   const libraryVersions = await getLibraryVersions(
       octokit,
       releaseBranchName,
-      releaseConfig,
+      libraryNames,
   );
   log("Fetched library versions", {libraryVersions: libraryVersions});
 
@@ -159,9 +167,9 @@ async function getLibraryMetadata(
     if (Object.prototype.hasOwnProperty.call(libraryVersions, library)) {
       libraryMetadata[library] = {
         "updatedVersion": libraryVersions[library],
-        "optedIn": !releaseReport.changesByLibraryName[library],
-        "libraryGroupRelease": !releaseReport.changesByLibraryName[library] ||
-        releaseReport.changesByLibraryName[library].length === 0,
+        "optedIn": !libraryChanges[library],
+        "libraryGroupRelease": !libraryChanges[library] ||
+        libraryChanges[library].length === 0,
       };
     }
   }
@@ -171,23 +179,22 @@ async function getLibraryMetadata(
 }
 
 /**
- * Extracts the version for each library in the release configuration from the
+ * Extracts the version for each library in the release from the
  * repository and stores them in an object.
  *
  * @param {Octokit} octokit The authenticated Octokit client.
  * @param {Object} releaseBranchName The release branch name.
- * @param {Object} releaseConfig The release configuration with the processed
- * library names.
+ * @param {Object} libraryNames The names of the libraries in the release.
  * @return {Promise<Object>} A promise that resolves to an object mapping
  * library names to versions.
  */
-async function getLibraryVersions(octokit, releaseBranchName, releaseConfig) {
+async function getLibraryVersions(octokit, releaseBranchName, libraryNames) {
   const libraryVersions = {};
 
   // Fetch and parse all library versions from grade properties files
   // in the release branch and store them in an object.
   // Perform all requests in parallel.
-  const promises = releaseConfig.libraries.map(async (library) => {
+  const promises = libraryNames.map(async (library) => {
     const gradleDir = library.endsWith("/ktx") ?
         library.replace("/ktx", "") : library;
 

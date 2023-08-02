@@ -4,32 +4,32 @@ import {Link, Typography, Paper} from "@material-ui/core";
 import {Alert, AlertTitle} from "@material-ui/lab";
 import {GitCommitIcon} from "@primer/octicons-react";
 import useStyles from "./styles";
+import useChanges from "../../../hooks/useChanges";
 
 /**
  * Represents a single library item in a release.
  *
- * @param {Object} props - The component props.
- * @param {Object} props.library - The library details.
- * @param {String} props.library.libraryName - The name of the library.
- * @param {String} props.library.updatedVersion - The updated version of the
+ * @param {Object} library - The library details.
+ * @param {String} library.id - The ID of the library.
+ * @param {String} library.libraryName - The name of the library.
+ * @param {String} library.updatedVersion - The updated version of the
  * library.
- * @param {Boolean} props.library.optedIn - Whether the library was manually
+ * @param {Boolean} library.optedIn - Whether the library was manually
  * opted into the release.
- * @param {Boolean} props.library.libraryGroupRelease - Whether the library
+ * @param {Boolean} library.libraryGroupRelease - Whether the library
  * was included to keep version alignment with other libraries.
- * @param {Array} props.library.changes - An array of change objects with
- * commitLink, commitTitle, kotlin, pullRequestLink, pullRequestID.
  * @return {JSX.Element} The ReleaseLibraryItem component.
  */
 function ReleaseLibraryItem({library}) {
   const classes = useStyles();
+
+  const changes = useChanges(library.id);
 
   const {
     libraryName,
     updatedVersion,
     optedIn,
     libraryGroupRelease,
-    changes,
   } = library;
 
   return (
@@ -55,13 +55,13 @@ function ReleaseLibraryItem({library}) {
         </Alert>
       ) : (
         changes.map(
-            ({commitLink, commitTitle, kotlin,
+            ({commitLink, commitTitle,
               pullRequestLink, pullRequestID}, index) => (
               <Typography variant="body2" color="textPrimary" key={index}>
                 <Link href={commitLink} target="_blank" rel="noreferrer">
                   <GitCommitIcon className={classes.icon} size={16} />
                 </Link>
-                {commitTitle} {kotlin && " (Kotlin) "}
+                {commitTitle}
             (
                 <Link
                   href={pullRequestLink}
@@ -80,19 +80,11 @@ function ReleaseLibraryItem({library}) {
 
 ReleaseLibraryItem.propTypes = {
   library: PropTypes.shape({
+    id: PropTypes.string.isRequired,
     libraryName: PropTypes.string.isRequired,
     updatedVersion: PropTypes.string.isRequired,
     optedIn: PropTypes.bool.isRequired,
     libraryGroupRelease: PropTypes.bool.isRequired,
-    changes: PropTypes.arrayOf(
-        PropTypes.shape({
-          commitLink: PropTypes.string.isRequired,
-          commitTitle: PropTypes.string.isRequired,
-          kotlin: PropTypes.bool,
-          pullRequestLink: PropTypes.string.isRequired,
-          pullRequestID: PropTypes.string.isRequired,
-        }),
-    ).isRequired,
   }).isRequired,
 };
 
