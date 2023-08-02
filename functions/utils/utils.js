@@ -138,20 +138,60 @@ function parseCommitTitleFromMessage(message) {
 }
 
 /**
- * Helper function to get all commit ids from a release report
+ * Gets the set of commit IDs from changes.
  *
- * @param {Object} releaseReport The release report containing changes by
- * library name.
- * @return {Set<string>} A set of all commit ids.
+ * @param {Map<string, Array<Object>>} libraryChanges Map of library names
+ * to changes.
+ * @return {Set<string>} The set of commit IDs from the release report.
  */
-function getCommitIdsFromReleaseReport(releaseReport) {
+function getCommitIdsFromChanges(libraryChanges) {
   const commitIds = new Set();
-  const libraryNames = Object.keys(releaseReport.changesByLibraryName);
+  const libraryNames = Object.keys(libraryChanges);
   for (const libraryName of libraryNames) {
-    const changes = releaseReport.changesByLibraryName[libraryName];
+    const changes = libraryChanges[libraryName];
     changes.forEach((change) => commitIds.add(change.commitId));
   }
   return commitIds;
+}
+
+/**
+ * Merges '/ktx' submodules data into root libraries.
+ *
+ * @param {Object} libraryData - The object containing library data, where each
+ * key is a library name, and the value is an array of changes.
+ * @return {Object} The updated library data with '/ktx' changes merged
+ * into root libraries and '/ktx' entries removed.
+ */
+function mergeKtxIntoRoot(libraryData) {
+  for (const key in libraryData) {
+    if (key.includes("/ktx")) {
+      const rootKey = key.split("/")[0];
+
+      // If the root library exists, merge the '/ktx' data into it
+      // otherwise, create a new root library with the '/ktx' data
+      if (libraryData[rootKey]) {
+        libraryData[rootKey] = [...libraryData[rootKey], ...libraryData[key]];
+      } else {
+        libraryData[rootKey] = libraryData[key];
+      }
+
+      // Remove the '/ktx' library from the object
+      delete libraryData[key];
+    }
+  }
+
+  return libraryData;
+}
+
+/**
+ * Filters out '/ktx' submodules from an array of library names.
+ *
+ * @param {Array} libaries - The array containing library names.
+ * @return {Array} The updated array of library names without any '/ktx'
+ * submodules.
+ */
+function filterOutKtx(libaries) {
+  return libaries.filter((library) => !library.includes("/ktx"));
 }
 
 module.exports = {
@@ -161,5 +201,7 @@ module.exports = {
   calculateReleaseState,
   processLibraryNames,
   parseCommitTitleFromMessage,
-  getCommitIdsFromReleaseReport,
+  mergeKtxIntoRoot,
+  filterOutKtx,
+  getCommitIdsFromChanges,
 };
