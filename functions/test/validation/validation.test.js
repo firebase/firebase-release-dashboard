@@ -53,18 +53,21 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
       },
       {
         releaseName: "M104",
         releaseOperator: "operator1",
         codeFreezeDate: "2123-07-30",
         releaseDate: "2123-08-07",
+        releaseBranchName: "branch",
       },
       {
         releaseName: "M105",
         releaseOperator: "operator1",
         codeFreezeDate: "2123-08-30",
         releaseDate: "2123-09-07",
+        releaseBranchName: "branch",
       },
     ];
     const existingReleases = [];
@@ -80,18 +83,21 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
       },
       {
         releaseName: "M104",
         releaseOperator: "operator1",
         codeFreezeDate: "2123-07-30",
         releaseDate: "2123-08-07",
+        releaseBranchName: "branch",
       },
       {
         releaseName: "M105",
         releaseOperator: "operator1",
         codeFreezeDate: "2123-08-30",
         releaseDate: "2123-09-07",
+        releaseBranchName: "branch",
       },
     ];
     const existingReleases = [
@@ -100,6 +106,7 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2022-06-30",
         releaseDate: "2022-07-07",
+        releaseBranchName: "branch",
       },
     ];
     const errors = await validateNewReleases(newReleases, existingReleases);
@@ -113,6 +120,7 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
       },
     ];
     const existingReleases = [];
@@ -133,6 +141,7 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
       },
     ];
     const existingReleases = [];
@@ -153,6 +162,7 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "not a date",
         releaseDate: "not a date",
+        releaseBranchName: "branch",
       },
     ];
     const existingReleases = [];
@@ -174,6 +184,7 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-07-30",
         releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
       },
     ];
     const existingReleases = [];
@@ -195,6 +206,7 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-07-07",
         releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
       },
     ];
     const existingReleases = [];
@@ -215,7 +227,25 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
       },
+      {
+        releaseName: "M103",
+        releaseOperator: "operator1",
+        codeFreezeDate: "2123-06-30",
+        releaseDate: "2123-07-07",
+        releaseBranchName: "branch",
+      },
+    ];
+    const errors = validateNewReleases(newReleases);
+    const expectedErrors = {
+      message: ERRORS.DUPLICATE_RELEASE_NAMES,
+    };
+    expect(errors).to.deep.include(expectedErrors);
+  });
+
+  it("should return an error for missing a release branch", async () => {
+    const newReleases = [
       {
         releaseName: "M103",
         releaseOperator: "operator1",
@@ -225,7 +255,8 @@ describe("validateNewReleases", () => {
     ];
     const errors = validateNewReleases(newReleases);
     const expectedErrors = {
-      message: ERRORS.DUPLICATE_RELEASE_NAMES,
+      message: ERRORS.MISSING_RELEASE_FIELD,
+      offendingRelease: newReleases[0],
     };
     expect(errors).to.deep.include(expectedErrors);
   });
@@ -270,10 +301,24 @@ describe("validateNewReleasesStructure", () => {
       releaseOperator: "operator1",
       codeFreezeDate: Timestamp.now(),
       // missing release date
+      // missing releaseBranchName
     }];
     expect(() => validateNewReleasesStructure(newReleases)).
         to.throw("Each release should have a Firestore Timestamp"+
           " property 'releaseDate'");
+  });
+
+  it("should throw an error if a release is missing a release branch", () => {
+    const newReleases = [{
+      releaseName: "M100",
+      releaseOperator: "operator1",
+      codeFreezeDate: Timestamp.now(),
+      releaseDate: Timestamp.now(),
+      // missing release branch
+    }];
+    expect(() => validateNewReleasesStructure(newReleases)).
+        to.throw("Each release should have a string property"+
+        " property 'releaseBranchName'");
   });
 
   it("should throw an error if a release property is of incorrect type", () => {
@@ -282,6 +327,7 @@ describe("validateNewReleasesStructure", () => {
       releaseOperator: "operator1",
       codeFreezeDate: Timestamp.now(),
       releaseDate: "not a timestamp",
+      releaseBranchName: "branch",
     }];
     expect(() => validateNewReleasesStructure(newReleases)).
         to.throw("Each release should have a Firestore Timestamp"+
@@ -294,6 +340,7 @@ describe("validateNewReleasesStructure", () => {
       releaseOperator: "operator1",
       codeFreezeDate: Timestamp.now(),
       releaseDate: Timestamp.now(),
+      releaseBranchName: "branch",
     }];
     expect(() => validateNewReleasesStructure(newReleases)).to.not.throw();
   });

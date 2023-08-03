@@ -119,21 +119,14 @@ async function getReleaseData(releaseId) {
  * @return {Object} - A release data object ready for storage
  */
 function releaseToFirestoreObject(release) {
-  const snapshotBranchName = `releases/${release.releaseName}`;
-  const releaseBranchName = `releases/${release.releaseName}.release`;
-  const snapshotBranchLink = `${REPO_URL}/tree/${snapshotBranchName}`;
-  const releaseBranchLink = `${REPO_URL}/tree/${releaseBranchName}`;
-
   return {
     state: RELEASE_STATES.SCHEDULED,
     releaseName: release.releaseName,
     releaseOperator: "ACore Team Member", // release.releaseOperator,
     codeFreezeDate: release.codeFreezeDate,
     releaseDate: release.releaseDate,
-    snapshotBranchName: snapshotBranchName,
-    snapshotBranchLink: snapshotBranchLink,
-    releaseBranchName: releaseBranchName,
-    releaseBranchLink: releaseBranchLink,
+    releaseBranchName: release.releaseBranchName,
+    releaseBranchLink: `${REPO_URL}/tree/${release.releaseBranchName}`,
     isComplete: false,
     buildArtifactStatus: "",
     buildArtifactConclusion: "",
