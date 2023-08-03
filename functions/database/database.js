@@ -244,7 +244,8 @@ async function batchDeleteReleaseLibraries(batch, releaseId) {
 function batchSetLibrariesForRelease(batch, libraries, releaseId) {
   Object.entries(libraries).forEach(
       ([libraryName, {updatedVersion, optedIn, libraryGroupRelease}]) => {
-        const docRef = db.collection("libraries").doc();
+        const uniqueId = `${libraryName}-${updatedVersion}`;
+        const docRef = db.collection("libraries").doc(uniqueId);
         batch.set(docRef, {
           libraryName,
           updatedVersion,
