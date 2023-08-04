@@ -8,6 +8,7 @@ import MainContent from "./components/MainContent";
 import theme from "./config/theme";
 import {loadGoogleFont} from "./services/fontLoader";
 import {useAuthentication} from "./hooks/useAuthentication";
+import ReleaseNotifier from "./components/ReleaseNotifier/ReleaseNotifier";
 
 /**
  * Main App component responsible for layout and data fetching.
@@ -25,6 +26,7 @@ function App() {
     <AppErrorBoundary>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <ReleaseNotifier />
         <Box>
           <Header isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn}/>
           <MainContent/>
