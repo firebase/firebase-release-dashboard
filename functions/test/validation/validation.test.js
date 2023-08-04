@@ -53,10 +53,10 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
-        releaseBranchName: "branch",
+        releaseBranchName: "releases/${releaseName}",
       },
       {
-        releaseName: "M104",
+        releaseName: "m104",
         releaseOperator: "operator1",
         codeFreezeDate: "2123-07-30",
         releaseDate: "2123-08-07",
@@ -258,6 +258,7 @@ describe("validateNewReleases", () => {
       message: ERRORS.MISSING_RELEASE_FIELD,
       offendingRelease: newReleases[0],
     };
+
     expect(errors).to.deep.include(expectedErrors);
   });
 });
