@@ -75,18 +75,14 @@ function ReleaseRow({releaseId, openSnackbar}) {
    * @param {Object} event - The event that triggered the change.
    */
   const handleChange = (event) => {
-    if (event.target.name === "releaseDate" ||
-      event.target.name === "codeFreezeDate") {
-      setEditedRelease({
-        ...editedRelease,
-        [event.target.name]: new Date(event.target.value),
-      });
-    } else {
-      setEditedRelease({
-        ...editedRelease,
-        [event.target.name]: event.target.value,
-      });
-    }
+    const isDateType = ["releaseDate", "codeFreezeDate"]
+        .includes(event.target.name);
+
+    setEditedRelease({
+      ...editedRelease,
+      [event.target.name]: isDateType ?
+        new Date(event.target.value) : event.target.value,
+    });
   };
 
   return (
