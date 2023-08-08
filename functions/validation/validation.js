@@ -117,6 +117,31 @@ function validateReleaseDates(release) {
 }
 
 /**
+ * Validates that the release isReleased status exists and is a boolean.
+ *
+ * @param {Object} release - The release to validate.
+ * @return {Array} errors - A list of errors from the validation of the released
+ * status.
+ */
+function validateIsReleased(release) {
+  const errors = [];
+
+  if (release.isReleased === undefined) {
+    errors.push({
+      message: ERRORS.MISSING_RELEASE_FIELD,
+      offendingRelease: release,
+    });
+  } else if (typeof release.isReleased !== "boolean") {
+    errors.push({
+      message: ERRORS.INVALID_RELEASE_FIELD,
+      offendingRelease: release,
+    });
+  }
+
+  return errors;
+}
+
+/**
  * Check if all release names are unique. Note that this is not responsible for
  * checking if these releases already exist in the database, only for checking
  * that the release names are unique within the set of releases to be scheduled.
@@ -177,12 +202,14 @@ function validateRelease(release) {
   const operatorErrors = validateReleaseOperator(release);
   const dateErrors = validateReleaseDates(release);
   const branchErrors = validateReleaseBranch(release);
+  const releasedErrors = validateIsReleased(release);
 
   return [
     ...releaseNameErrors,
     ...operatorErrors,
     ...dateErrors,
     ...branchErrors,
+    ...releasedErrors,
   ];
 }
 
@@ -256,6 +283,12 @@ function validateNewReleaseStructure(release) {
   !(release.releaseBranchName !== "string")) {
     throw new Error("Each release should have a string property"+
     " property 'releaseBranchName'");
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(release, "isReleased") ||
+  typeof release.isReleased !== "boolean") {
+    throw new Error("Each release should have a boolean"+
+    " property 'isReleased'");
   }
 }
 

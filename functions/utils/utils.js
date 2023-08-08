@@ -61,13 +61,13 @@ function convertReleaseDatesToTimestamps(releases) {
  * @param {Date} codeFreeze The date on which the code for the release was
  * frozen.
  * @param {Date} release The scheduled release date.
- * @param {boolean} isComplete Indicates whether the release process has been
- * completed.
+ * @param {boolean} isReleased Flag that indicates whether the release has
+ * been released. This is set manually by administrators.
  * @return {string} The calculated state of the release.
  * @throws {Error} If the release state cannot be determined from the
  * provided parameters.
  */
-function calculateReleaseState(codeFreeze, release, isComplete) {
+function calculateReleaseState(codeFreeze, release, isReleased) {
   const now = new Date();
 
   // Get time difference in milliseconds
@@ -85,7 +85,7 @@ function calculateReleaseState(codeFreeze, release, isComplete) {
   } else if (diffDaysCodeFreeze < 0 && diffDaysRelease === 0) {
     return RELEASE_STATES.RELEASE_DAY;
   } else if (diffDaysRelease < 0) {
-    return isComplete ? RELEASE_STATES.RELEASED : RELEASE_STATES.DELAYED;
+    return isReleased ? RELEASE_STATES.RELEASED : RELEASE_STATES.DELAYED;
   } else {
     throw new Error(`Unable to calculate release state between 
     ${codeFreeze} and ${release} dates`);

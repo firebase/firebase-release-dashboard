@@ -450,7 +450,7 @@ async function syncReleaseState(releaseId, octokit) {
   const releaseState = calculateReleaseState(
       releaseData.codeFreezeDate.toDate(),
       releaseData.releaseDate.toDate(),
-      releaseData.isComplete);
+      releaseData.isReleased);
 
   log("Inferred release state", {releaseState: releaseState});
 
@@ -617,7 +617,6 @@ async function deleteRelease(req, res) {
     return res.status(200).send("OK");
   });
 }
-
 
 module.exports = {
   addReleases,

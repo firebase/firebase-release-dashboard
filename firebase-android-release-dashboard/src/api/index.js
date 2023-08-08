@@ -95,6 +95,7 @@ async function refreshRelease(releaseId) {
  * @param {string} releaseOperator - The new operator of the release.
  * @param {Date} codeFreezeDate - The new code freeze date of the release.
  * @param {Date} releaseDate - The new release date of the release.
+ * @param {boolean} isReleased - Whether the release is released.
  * @return {Promise<Object>} - Response object.
  */
 async function modifyRelease(
@@ -104,6 +105,7 @@ async function modifyRelease(
     releaseOperator,
     codeFreezeDate,
     releaseDate,
+    isReleased,
 ) {
   const token = await auth.currentUser.getIdToken();
   const response = await axios.post(MODIFY_RELEASE_URL, {
@@ -114,6 +116,7 @@ async function modifyRelease(
       releaseOperator: releaseOperator,
       codeFreezeDate: format(codeFreezeDate, API_DATE_FORMAT),
       releaseDate: format(releaseDate, API_DATE_FORMAT),
+      isReleased: isReleased,
     },
   },
   {

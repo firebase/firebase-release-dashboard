@@ -18,6 +18,7 @@ const useReleaseActions = (release, openSnackbar, setEditing) => {
   const [deleting, setDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [toggling, setToggling] = useState(false);
 
   /**
    * Handle a click on the delete button by calling the deleteRelease API
@@ -73,6 +74,7 @@ const useReleaseActions = (release, openSnackbar, setEditing) => {
           "ACore team member", // TODO: Replace with actual operator
           editedRelease.codeFreezeDate,
           editedRelease.releaseDate,
+          editedRelease.isReleased,
       );
       if (response.status === 200) {
         openSnackbar("Release modified successfully", "success");
@@ -87,13 +89,42 @@ const useReleaseActions = (release, openSnackbar, setEditing) => {
     setSubmitting(false);
   };
 
+  /**
+   *
+   * @param {Object} release
+   */
+  const handleReleasedToggle = async (release) => {
+    setToggling(true);
+    try {
+      const response = await modifyRelease(
+          release.id,
+          release.releaseName,
+          release.releaseBranchName,
+          release.releaseOperator,
+          release.codeFreezeDate,
+          release.releaseDate,
+          !release.isReleased, // Toggle
+      );
+      if (response.status === 200) {
+        openSnackbar("Release state toggled sucessfully", "success");
+      } else {
+        openSnackbar("Failed to toggle release state", "error");
+      }
+    } catch (error) {
+      openSnackbar("Error occurred while toggling release state", "error");
+    }
+    setToggling(false);
+  };
+
   return {
     deleting,
     refreshing,
     submitting,
+    toggling,
     handleDeleteClick,
     handleRefreshClick,
     handleSubmitClick,
+    handleReleasedToggle,
   };
 };
 
