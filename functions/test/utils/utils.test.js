@@ -5,6 +5,7 @@ const {
   calculateReleaseState,
   processLibraryNames,
   parseCommitTitleFromMessage,
+  getStackTrace,
 } = require("../../utils/utils.js");
 const RELEASE_STATES = require("../../utils/releaseStates");
 const {expect} = require("chai");
@@ -223,5 +224,23 @@ describe("parseCommitTitleFromMessage", () => {
   it("should throw an error on empty strings", () => {
     const message = "";
     expect(() => parseCommitTitleFromMessage(message)).to.throw();
+  });
+});
+
+describe("getStackTrace", () => {
+  it("should throw an error if the argument is not an Error object", () => {
+    const notAnError = "Just a string";
+
+    expect(() => getStackTrace(notAnError))
+        .to.throw("Provided argument is not an Error object");
+  });
+
+  it("should return a formatted stack trace for a valid Error object", () => {
+    const error = new Error("Test error");
+
+    const result = getStackTrace(error);
+
+    expect(result).to.contain("Test error");
+    expect(result).to.contain("at");
   });
 });
