@@ -26,35 +26,10 @@ function useReleaseStateUpdates() {
         orderBy("releaseDate", "desc"));
 
     const unsubscribe = onSnapshot(releasesQuery, (snapshot) => {
-      let updatedReleases = [];
-
-      snapshot.docChanges().forEach((change) => {
-        const data = change.doc.data();
-        const id = change.doc.id;
-
-        // Only process modified documents.
-        if (previousStates.current.hasOwnProperty(id) &&
-          (change.type === "modified" &&
-            (previousStates.current[id] !== data.state))) {
-          // Update releases
-          updatedReleases = [
-            ...updatedReleases.filter((release) => release.id !== id),
-            {
-
-              id,
-              ...data,
-              // Convert Firestore Timestamp to JS Date object
-              releaseDate: data.releaseDate.toDate(),
-              codeFreezeDate: data.codeFreezeDate.toDate(),
-            },
-          ];
-        }
-
-        if (change.type == "modified" || change.type == "added") {
-          previousStates.current[id] = data.state;
-        }
-      });
-
+      const updatedReleases = getReleasesWithStateUpdates(
+          snapshot,
+          previousStates,
+      );
       setReleasesWithStateUpdates(updatedReleases);
     });
 
@@ -63,6 +38,46 @@ function useReleaseStateUpdates() {
   }, []); // Empty array to ensure the effect only runs once on component mount
 
   return releasesWithStateUpdates;
+}
+
+/**
+ * Retrieve the releases with state updates from the snapshot.
+ *
+ * @param {Object} snapshot The snapshot of the releases collection
+ * @param {Object} previousStates The previous states of the releases
+ * @return {Array} The updated releases
+ */
+function getReleasesWithStateUpdates(snapshot, previousStates) {
+  let updatedReleases = [];
+
+  snapshot.docChanges().forEach((change) => {
+    const data = change.doc.data();
+    const id = change.doc.id;
+
+    const stateWasModified = previousStates.current.hasOwnProperty(id) &&
+      (change.type === "modified" && previousStates.current[id] !== data.state);
+
+    // Only process modified documents
+    if (stateWasModified) {
+      // Update releases
+      updatedReleases = [
+        ...updatedReleases.filter((release) => release.id !== id),
+        {
+          id,
+          ...data,
+          // Convert Firestore Timestamp to JS Date object
+          releaseDate: data.releaseDate.toDate(),
+          codeFreezeDate: data.codeFreezeDate.toDate(),
+        },
+      ];
+    }
+
+    if (change.type == "modified" || change.type == "added") {
+      previousStates.current[id] = data.state;
+    }
+  });
+
+  return updatedReleases;
 }
 
 export default useReleaseStateUpdates;
