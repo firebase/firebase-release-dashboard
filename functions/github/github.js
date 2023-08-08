@@ -156,25 +156,29 @@ async function getLibraryMetadata(
     libraryChanges,
 ) {
   const libraryMetadata = {};
+  const allLibraryNames = [...libraryNames, ...Object.keys(libraryChanges)]
+      .filter((value, index, self) => self.indexOf(value) === index);
   const libraryVersions = await getLibraryVersions(
       octokit,
       releaseBranchName,
-      libraryNames,
+      allLibraryNames,
   );
-  log("Fetched library versions", {libraryVersions: libraryVersions});
 
   for (const library in libraryVersions) {
     if (Object.prototype.hasOwnProperty.call(libraryVersions, library)) {
+      const libraryIsReleasing = libraryNames.includes(library);
+      const libraryHasChanges = libraryChanges[library] &&
+        libraryChanges[library].length > 0;
       libraryMetadata[library] = {
         "updatedVersion": libraryVersions[library],
-        "optedIn": !libraryChanges[library],
+        "optedIn": libraryIsReleasing && !libraryHasChanges,
+        "optedOut": !libraryIsReleasing && libraryHasChanges,
         "libraryGroupRelease": !libraryChanges[library] ||
         libraryChanges[library].length === 0,
       };
     }
   }
 
-  log("Library metadata", {libraryMetadata: libraryMetadata});
   return libraryMetadata;
 }
 
