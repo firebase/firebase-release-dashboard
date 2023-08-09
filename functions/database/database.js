@@ -11,6 +11,7 @@ const {
 } = require("../utils/utils.js");
 const {REPO_URL} = require("../github/github.js");
 const {warn} = require("firebase-functions/logger");
+const REGEX = require("../utils/regex.js");
 
 /**
  * Check if a release document with a given releaseId exists in Firestore.
@@ -223,6 +224,20 @@ async function batchDeleteReleaseLibraries(batch, releaseId) {
 }
 
 /**
+ * Since Firestore documents can't have '/' in their IDs, we need to
+ * encode the library name and version into a unique ID that does
+ * not have that character.
+ *
+ * @param {string} libraryName
+ * @param {string} updatedVersion
+ * @return {string} The ID of the library document.
+ */
+function encodeLibraryDocId(libraryName, updatedVersion) {
+  const encodedLibraryName = libraryName.replace(REGEX.SLASH, ":");
+  return `${encodedLibraryName}-${updatedVersion}`;
+}
+
+/**
  * Adds new library release documents to Firestore batch.
  *
  * Note that this will not commit the change, it merely adds it to
@@ -237,7 +252,7 @@ async function batchDeleteReleaseLibraries(batch, releaseId) {
 function batchSetLibrariesForRelease(batch, libraries, releaseId) {
   Object.entries(libraries).forEach(
       ([libraryName, {updatedVersion, optedIn, libraryGroupRelease}]) => {
-        const uniqueId = `${libraryName}-${updatedVersion}`;
+        const uniqueId = encodeLibraryDocId(libraryName, updatedVersion);
         const docRef = db.collection("libraries").doc(uniqueId);
         batch.set(docRef, {
           libraryName,
