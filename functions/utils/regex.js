@@ -15,6 +15,8 @@ const REGEX = {
   // This regular expression matches a valid release name. Valid release names
   // are of the form "M<releaseNumber>".
   RELEASE_NAME: /^M\d+\S*$/,
+  // This regular expression matches slashes.
+  SLASH: /\//g,
 };
 
 module.exports = REGEX;

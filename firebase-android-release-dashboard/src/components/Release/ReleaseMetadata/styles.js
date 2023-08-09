@@ -10,11 +10,6 @@ const useStyles = makeStyles({
     flex: "1 0 20%",
     textAlign: "left",
   },
-  stateChip: {
-    padding: theme.spacing(0.5),
-    color: theme.palette.primary.contrastText,
-    fontWeight: 450,
-  },
 });
 
 export default useStyles;

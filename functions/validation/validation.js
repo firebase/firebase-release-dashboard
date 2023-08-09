@@ -1,17 +1,5 @@
 const {Timestamp} = require("firebase-admin/firestore");
 const ERRORS = require("../utils/errors.js");
-const REGEX = require("../utils/regex.js");
-
-/**
- * Helper function to check the release name format.
- * The format of release names must be "M<releaseNumber>"
- *
- * @param {string} name - The release name.
- * @return {bool} - True if the release name is valid.
- */
-function isValidReleaseName(name) {
-  return REGEX.RELEASE_NAME.test(name);
-}
 
 /** Helper function to check that a string represents a valid date.
  *
@@ -46,11 +34,6 @@ function validateReleaseName(release) {
       release.releaseName.trim() === "") {
     errors.push({
       message: ERRORS.INVALID_RELEASE_FIELD,
-      offendingRelease: release,
-    });
-  } else if (!isValidReleaseName(release.releaseName)) {
-    errors.push({
-      message: ERRORS.INVALID_RELEASE_NAME,
       offendingRelease: release,
     });
   }
@@ -141,6 +124,32 @@ function validateUniqueReleaseNames(releases) {
 }
 
 /**
+ * Validates that the release branch exists.
+ *
+ * @param {Object} release - The release to validate.
+ * @return {Array} errors - A list of errors from the validation of the release
+ * branch.
+ */
+function validateReleaseBranch(release) {
+  const errors = [];
+
+  if (!release.releaseBranchName) {
+    errors.push({
+      message: ERRORS.MISSING_RELEASE_FIELD,
+      offendingRelease: release,
+    });
+  } else if (typeof release.releaseBranchName !== "string" ||
+          release.releaseOperator.trim() === "") {
+    errors.push({
+      message: ERRORS.INVALID_RELEASE_FIELD,
+      offendingRelease: release,
+    });
+  }
+
+  return errors;
+}
+
+/**
  * Validates that a release object is in a valid form.
  *
  * @param {Object} release - The release to validate.
@@ -150,8 +159,14 @@ function validateRelease(release) {
   const releaseNameErrors = validateReleaseName(release);
   const operatorErrors = validateReleaseOperator(release);
   const dateErrors = validateReleaseDates(release);
+  const branchErrors = validateReleaseBranch(release);
 
-  return [...releaseNameErrors, ...operatorErrors, ...dateErrors];
+  return [
+    ...releaseNameErrors,
+    ...operatorErrors,
+    ...dateErrors,
+    ...branchErrors,
+  ];
 }
 
 /**
@@ -219,6 +234,12 @@ function validateNewReleaseStructure(release) {
     throw new Error("Each release should have a Firestore Timestamp"+
         " property 'releaseDate'");
   }
+
+  if (!Object.prototype.hasOwnProperty.call(release, "releaseBranchName") ||
+  !(release.releaseBranchName !== "string")) {
+    throw new Error("Each release should have a string property"+
+    " property 'releaseBranchName'");
+  }
 }
 
 /**
@@ -237,7 +258,6 @@ function validateNewReleasesStructure(newReleases) {
 }
 
 module.exports = {
-  isValidReleaseName,
   isValidDate,
   validateRelease,
   validateNewReleases,

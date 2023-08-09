@@ -1,27 +1,10 @@
 import React from "react";
 import PropTypes from "prop-types";
-import {Grid, Chip, Typography} from "@material-ui/core";
+import {Grid, Typography} from "@material-ui/core";
 import {format} from "date-fns";
 import {RELEASE_STATES} from "../../../utils/releaseStates";
-import theme from "../../../config/theme";
 import useStyles from "./styles";
-
-const chipColor = (state) => {
-  switch (state) {
-    case RELEASE_STATES.CODE_FREEZE:
-      return theme.palette.chip.blue;
-    case RELEASE_STATES.RELEASE_DAY:
-      return theme.palette.chip.purple;
-    case RELEASE_STATES.RELEASED:
-      return theme.palette.chip.green;
-    case RELEASE_STATES.DELAYED:
-      return theme.palette.chip.orange;
-    case RELEASE_STATES.ERROR:
-      return theme.palette.chip.error;
-    default:
-      return theme.palette.chip.gray;
-  }
-};
+import StateChip from "../StateChip/StateChip";
 
 /**
  * Represents the metadata of a single release.
@@ -74,11 +57,7 @@ function ReleaseMetadata({release}) {
         </Typography>
       </Grid>
       <Grid item xs={3}>
-        <Chip
-          label={state}
-          className={classes.stateChip}
-          style={{backgroundColor: chipColor(state)}}
-        />
+        <StateChip state={state} />
       </Grid>
     </Grid>
   );

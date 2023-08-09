@@ -26,6 +26,23 @@ function convertDateToTimestamp(dateString) {
 }
 
 /**
+ * Convert release dates from strings to Firestore Timestamps
+ * for a single release.
+ *
+ * @param {Object} release - The release to convert.
+ * @return {Object} The release with the converted dates.
+ */
+function convertSingleReleaseDatesToTimestamps(release) {
+  const convertedRelease = {...release};
+  ["codeFreezeDate", "releaseDate"].forEach((dateType) => {
+    if (release[dateType]) {
+      convertedRelease[dateType] = convertDateToTimestamp(release[dateType]);
+    }
+  });
+  return convertedRelease;
+}
+
+/**
  * Convert release dates from strings to Firestore Timestamps.
  *
  * @param {Object[]} releases - The releases to convert.
@@ -33,13 +50,7 @@ function convertDateToTimestamp(dateString) {
  */
 function convertReleaseDatesToTimestamps(releases) {
   return releases.map((release) => {
-    const convertedRelease = {...release};
-    ["codeFreezeDate", "releaseDate"].forEach((dateType) => {
-      if (release[dateType]) {
-        convertedRelease[dateType] = convertDateToTimestamp(release[dateType]);
-      }
-    });
-    return convertedRelease;
+    return convertSingleReleaseDatesToTimestamps(release);
   });
 }
 
@@ -213,6 +224,7 @@ function getStackTrace(error) {
 
 module.exports = {
   convertDateToTimestamp,
+  convertSingleReleaseDatesToTimestamps,
   convertReleaseDatesToTimestamps,
   parseGradlePropertiesForVersion,
   calculateReleaseState,
