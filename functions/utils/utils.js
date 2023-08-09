@@ -203,7 +203,9 @@ function filterOutKtx(libaries) {
  */
 function getStackTrace(error) {
   if (!(error instanceof Error)) {
-    throw new Error("Provided argument is not an Error object");
+    throw new Error(
+        `Provided argument is not an Error object: ${error}}`,
+    );
   }
 
   return error.stack.trim();
