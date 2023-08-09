@@ -99,7 +99,7 @@ function EditReleaseDialog(
           Cancel
         </Button>
         <Button
-          onClick={handleSubmitClick}
+          onClick={() => handleSubmitClick(editedRelease)}
           color="primary"
           disabled={submitting}
         >

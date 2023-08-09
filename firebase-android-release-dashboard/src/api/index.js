@@ -7,6 +7,7 @@ import {
   REFRESH_RELEASE_URL,
   GET_RELEASES_URL,
 } from "./constants";
+import {format} from "date-fns";
 
 const API_DATE_FORMAT = "yyyy-MM-dd";
 

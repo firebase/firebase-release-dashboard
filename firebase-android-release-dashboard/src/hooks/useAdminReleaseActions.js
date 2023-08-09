@@ -45,7 +45,6 @@ const useReleaseActions = (release, openSnackbar, setEditing) => {
     setRefreshing(true);
     try {
       const response = await refreshRelease(release.id);
-      console.log("ok", response.status === 200);
       if (response.status === 200) {
         openSnackbar("Release refreshed successfully", "success");
       } else {
