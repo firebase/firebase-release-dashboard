@@ -194,6 +194,18 @@ function filterOutKtx(libaries) {
   return libaries.filter((library) => !library.includes("/ktx"));
 }
 
+/**
+ * Filters out duplicate values from an array.
+ *
+ * @param {Array} arr
+ * @return {Array} The updated array without any duplicate values.
+ */
+function getUniqueValues(arr) {
+  return arr.filter(
+      (value, index, self) => self.indexOf(value) === index,
+  );
+}
+
 module.exports = {
   convertDateToTimestamp,
   convertReleaseDatesToTimestamps,
@@ -204,4 +216,5 @@ module.exports = {
   mergeKtxIntoRoot,
   filterOutKtx,
   getCommitIdsFromChanges,
+  getUniqueValues,
 };
