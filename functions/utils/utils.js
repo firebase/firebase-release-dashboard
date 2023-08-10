@@ -26,6 +26,23 @@ function convertDateToTimestamp(dateString) {
 }
 
 /**
+ * Convert release dates from strings to Firestore Timestamps
+ * for a single release.
+ *
+ * @param {Object} release - The release to convert.
+ * @return {Object} The release with the converted dates.
+ */
+function convertSingleReleaseDatesToTimestamps(release) {
+  const convertedRelease = {...release};
+  ["codeFreezeDate", "releaseDate"].forEach((dateType) => {
+    if (release[dateType]) {
+      convertedRelease[dateType] = convertDateToTimestamp(release[dateType]);
+    }
+  });
+  return convertedRelease;
+}
+
+/**
  * Convert release dates from strings to Firestore Timestamps.
  *
  * @param {Object[]} releases - The releases to convert.
@@ -33,13 +50,7 @@ function convertDateToTimestamp(dateString) {
  */
 function convertReleaseDatesToTimestamps(releases) {
   return releases.map((release) => {
-    const convertedRelease = {...release};
-    ["codeFreezeDate", "releaseDate"].forEach((dateType) => {
-      if (release[dateType]) {
-        convertedRelease[dateType] = convertDateToTimestamp(release[dateType]);
-      }
-    });
-    return convertedRelease;
+    return convertSingleReleaseDatesToTimestamps(release);
   });
 }
 
@@ -206,8 +217,26 @@ function getUniqueValues(arr) {
   );
 }
 
+/**
+ * Gets the stack trace from an error.
+ *
+ * @param {Error} error - The error to get the stack trace from.
+ * @throws {Error} If the provided argument is not an Error object.
+ * @return {string} The stack trace.
+ */
+function getStackTrace(error) {
+  if (!(error instanceof Error)) {
+    throw new Error(
+        `Provided argument is not an Error object: ${error}}`,
+    );
+  }
+
+  return error.stack.trim();
+}
+
 module.exports = {
   convertDateToTimestamp,
+  convertSingleReleaseDatesToTimestamps,
   convertReleaseDatesToTimestamps,
   parseGradlePropertiesForVersion,
   calculateReleaseState,
@@ -217,4 +246,5 @@ module.exports = {
   filterOutKtx,
   getCommitIdsFromChanges,
   getUniqueValues,
+  getStackTrace,
 };

@@ -1,4 +1,4 @@
-const {log, error} = require("firebase-functions/logger");
+const {log} = require("firebase-functions/logger");
 const {parseGradlePropertiesForVersion} = require("../utils/utils.js");
 const crypto = require("crypto");
 const {getUniqueValues} = require("../utils/utils.js");
@@ -14,33 +14,26 @@ const REPO_URL = `https://github.com/${OWNER}/${REPO}`;
  * @param {Octokit} octokit The authenticated Octokit instance.
  * @param {string} ref The git reference (typically a branch or tag).
  * @param {string} path The path to the file within the repository.
+ * @throws {Error} If the request fails.
  * @return {Promise<string>} The file's content as a string.
  */
 async function getRepositoryContent(octokit, ref, path) {
   log("fetching repository content", {ref: ref, path: path});
-  try {
-    // Fetch the file from the GitHub repository
-    const response = await octokit.request(
-        "GET /repos/{owner}/{repo}/contents/{path}", {
-          owner: OWNER,
-          repo: REPO,
-          path: path,
-          ref: ref,
-          headers: {
-            "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
-          },
-        });
+  // Fetch the file from the GitHub repository
+  const response = await octokit.request(
+      "GET /repos/{owner}/{repo}/contents/{path}", {
+        owner: OWNER,
+        repo: REPO,
+        path: path,
+        ref: ref,
+        headers: {
+          "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
+        },
+      });
 
-    // Decode the file content (which is base64 encoded by GitHub)
-    const content = Buffer.from(response.data.content, "base64").toString();
-    return content;
-  } catch (err) {
-    error(
-        `Error fetching ${path} on ${ref} from GitHub:`,
-        {error: err.message},
-    );
-    throw err;
-  }
+  // Decode the file content (which is base64 encoded by GitHub)
+  const content = Buffer.from(response.data.content, "base64").toString();
+  return content;
 }
 
 /**
@@ -48,30 +41,23 @@ async function getRepositoryContent(octokit, ref, path) {
  *
  * @param {Octokit} octokit The authenticated Octokit instance.
  * @param {String} ref The git reference (typically a branch or tag).
+ * @throws {Error} If the request fails.
  * @return {Promise<Array>} An array of check run objects.
  */
 async function listCheckRuns(octokit, ref) {
-  try {
-    // Fetch the list of check runs for the git reference
-    const checkRuns = await octokit.paginate(
-        "GET /repos/{owner}/{repo}/commits/{ref}/check-runs", {
-          owner: OWNER,
-          repo: REPO,
-          ref: ref,
-          headers: {
-            "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
-          },
-          per_page: 100,
-        });
+  // Fetch the list of check runs for the git reference
+  const checkRuns = await octokit.paginate(
+      "GET /repos/{owner}/{repo}/commits/{ref}/check-runs", {
+        owner: OWNER,
+        repo: REPO,
+        ref: ref,
+        headers: {
+          "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
+        },
+        per_page: 100,
+      });
 
-    return checkRuns;
-  } catch (err) {
-    error(
-        `Error fetching check suites on ${ref} from GitHub:`,
-        {error: err.message},
-    );
-    throw err;
-  }
+  return checkRuns;
 }
 
 /**
@@ -206,7 +192,7 @@ async function getLibraryVersions(octokit, releaseBranchName, libraryNames) {
   // Perform all requests in parallel.
   const promises = libraryNames.map(async (library) => {
     const gradleDir = library.endsWith("/ktx") ?
-        library.replace("/ktx", "") : library;
+      library.replace("/ktx", "") : library;
 
     const gradleProperties = await getRepositoryContent(
         octokit, releaseBranchName,
@@ -226,26 +212,23 @@ async function getLibraryVersions(octokit, releaseBranchName, libraryNames) {
  *
  * @param {Octokit} octokit The authenticated Octokit client.
  * @param {string} releaseBranchName The name of the release branch to check.
+ * @throws {Error} If the request fails. If the branch does not exist, the
+ * request will fail with a 404 error.
  * @return {Promise<boolean>} A promise that resolves to true if the branch
  * exists, false otherwise.
  */
-async function checkReleaseBranchExists(octokit, releaseBranchName) {
-  try {
-    await octokit.request(
-        "GET /repos/{owner}/{repo}/branches/{branch}", {
-          owner: OWNER,
-          repo: REPO,
-          branch: releaseBranchName,
-          headers: {
-            "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
-          },
-        });
-  } catch (err) {
-    error("error occured while checking if release branch exists",
-        {error: err.message});
-    return false;
-  }
+async function getReleaseBranch(octokit, releaseBranchName) {
+  await octokit.request(
+      "GET /repos/{owner}/{repo}/branches/{branch}", {
+        owner: OWNER,
+        repo: REPO,
+        branch: releaseBranchName,
+        headers: {
+          "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
+        },
+      });
 
+  // If the request succeeds, the branch exists
   return true;
 }
 
@@ -254,35 +237,31 @@ async function checkReleaseBranchExists(octokit, releaseBranchName) {
  *
  * @param {Octokit} octokit
  * @param {string} releaseBranchName
- * @throws {Error} If there is no Build Release Artifacts workflow run on the
+ * @throws {Error} If the request fails.
+ * @throws {Error} If no Build Release Artifacts workflow is found on the
  * release branch.
  * @return {Promise<Object>} The build artifact workflow run.
  */
 async function getBuildArtifactsWorkflow(octokit, releaseBranchName) {
   // Fetch the Build Release Artifact workflow run on the release branch
-  try {
-    const res = await octokit.request(
-        "GET /repos/{owner}/{repo}/actions/runs", {
-          owner: OWNER,
-          repo: REPO,
-          branch: releaseBranchName,
-          headers: {
-            "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
-          },
-        });
+  const res = await octokit.request(
+      "GET /repos/{owner}/{repo}/actions/runs", {
+        owner: OWNER,
+        repo: REPO,
+        branch: releaseBranchName,
+        headers: {
+          "X-GitHub-Api-Version": X_GITHUB_API_VERSION,
+        },
+      });
 
-    for (const workflow of res.data.workflow_runs) {
-      if (workflow.name === "Build Release Artifacts") {
-        return workflow;
-      }
+  for (const workflow of res.data.workflow_runs) {
+    if (workflow.name === "Build Release Artifacts") {
+      return workflow;
     }
-
-    throw new Error(`No Build Release Artifacts workflow found on 
-    ${releaseBranchName}`);
-  } catch (err) {
-    error("error while fetching build artifact status", {error: err.message});
-    throw err;
   }
+
+  throw new Error(`No Build Release Artifacts workflow found on 
+    ${releaseBranchName}`);
 }
 
 /**
@@ -317,7 +296,7 @@ module.exports = {
   getReleaseConfig,
   getReleaseReport,
   getLibraryMetadata,
-  checkReleaseBranchExists,
+  getReleaseBranch,
   getBuildArtifactsWorkflow,
   verifySignature,
   REPO_URL,

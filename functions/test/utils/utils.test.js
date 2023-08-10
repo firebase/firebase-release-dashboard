@@ -1,10 +1,12 @@
 const {
   convertDateToTimestamp,
+  convertSingleReleaseDatesToTimestamps,
   convertReleaseDatesToTimestamps,
   parseGradlePropertiesForVersion,
   calculateReleaseState,
   processLibraryNames,
   parseCommitTitleFromMessage,
+  getStackTrace,
 } = require("../../utils/utils.js");
 const RELEASE_STATES = require("../../utils/releaseStates");
 const {expect} = require("chai");
@@ -23,6 +25,35 @@ describe("convertDateToTimestamp", () => {
     const consoleErrorStub = sinon.stub(console, "error");
     expect(() => convertDateToTimestamp(dateString)).to.throw();
     consoleErrorStub.restore();
+  });
+});
+
+describe("convertSingleReleaseDatesToTimestamps", () => {
+  it("should correctly convert date strings to Firestore Timestamps", () => {
+    const release = {
+      name: "Release 1",
+      codeFreezeDate: "2023-07-19",
+      releaseDate: "2023-08-19",
+    };
+
+    const result = convertSingleReleaseDatesToTimestamps(release);
+
+    expect(result).to.have.property("codeFreezeDate");
+    expect(result.codeFreezeDate).to.be.an
+        .instanceof(Timestamp);
+    expect(result).to.have.property("releaseDate");
+    expect(result.releaseDate).to.be.an
+        .instanceof(Timestamp);
+  });
+
+  it("should not convert if date properties are not present", () => {
+    const release = {
+      name: "Release 1",
+    };
+
+    const result = convertSingleReleaseDatesToTimestamps(release);
+
+    expect(result).to.deep.equal(release);
   });
 });
 
@@ -223,5 +254,23 @@ describe("parseCommitTitleFromMessage", () => {
   it("should throw an error on empty strings", () => {
     const message = "";
     expect(() => parseCommitTitleFromMessage(message)).to.throw();
+  });
+});
+
+describe("getStackTrace", () => {
+  it("should throw an error if the argument is not an Error object", () => {
+    const notAnError = "Just a string";
+
+    expect(() => getStackTrace(notAnError))
+        .to.throw("Provided argument is not an Error object");
+  });
+
+  it("should return a formatted stack trace for a valid Error object", () => {
+    const error = new Error("Test error");
+
+    const result = getStackTrace(error);
+
+    expect(result).to.contain("Test error");
+    expect(result).to.contain("at");
   });
 });
