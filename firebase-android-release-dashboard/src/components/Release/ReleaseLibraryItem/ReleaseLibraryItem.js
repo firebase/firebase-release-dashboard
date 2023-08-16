@@ -7,6 +7,20 @@ import useStyles from "./styles";
 import useChanges from "../../../hooks/useChanges";
 
 /**
+ * Since Firestore documents can't have '/' in their IDs, we need to
+ * encode the library name and version into a unique ID that does
+ * not have that character.
+ *
+ * @param {string} libraryName
+ * @param {string} updatedVersion
+ * @return {string} The ID of the library document.
+ */
+function encodeLibraryDocId(libraryName, updatedVersion) {
+  const encodedLibraryName = libraryName.replace(/\//g, ":");
+  return `${encodedLibraryName}-${updatedVersion}`;
+}
+
+/**
  * Represents a single library item in a release.
  *
  * @param {Object} library - The library details.
@@ -23,7 +37,9 @@ import useChanges from "../../../hooks/useChanges";
 function ReleaseLibraryItem({library}) {
   const classes = useStyles();
 
-  const changes = useChanges(library.id);
+  const libraryId = encodeLibraryDocId(
+      library.libraryName, library.updatedVersion);
+  const changes = useChanges(libraryId);
 
   const {
     libraryName,
