@@ -13,6 +13,7 @@ function convertDateToTimestamp(dateString) {
   try {
     // Attempt to parse the date string and convert to Firestore Timestamp
     const dateObject = new Date(dateString);
+    dateObject.setHours(8, 0, 0, 0); // Set to 8am UTC
     if (!isNaN(dateObject)) {
       return Timestamp.fromDate(dateObject);
     } else {
