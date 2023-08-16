@@ -122,14 +122,14 @@ async function getReleaseData(releaseId) {
  */
 function releaseToFirestoreObject(release) {
   return {
-    state: RELEASE_STATES.SCHEDULED,
+    state: RELEASE_STATES.SCHEDULED, // Temporary state until release is synced
     releaseName: release.releaseName,
     releaseOperator: "ACore Team Member", // release.releaseOperator,
     codeFreezeDate: release.codeFreezeDate,
     releaseDate: release.releaseDate,
     releaseBranchName: release.releaseBranchName,
     releaseBranchLink: `${REPO_URL}/tree/${release.releaseBranchName}`,
-    isComplete: false,
+    isReleased: release.isReleased,
     buildArtifactStatus: "",
     buildArtifactConclusion: "",
     buildArtifactLink: "",

@@ -138,7 +138,7 @@ describe("calculateReleaseState", () => {
         .to.equal(RELEASE_STATES.RELEASE_DAY);
   });
 
-  it("should return RELEASED if release date has passed and isComplete " +
+  it("should return RELEASED if release date has passed and isReleased " +
       "is true", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000);
@@ -147,7 +147,7 @@ describe("calculateReleaseState", () => {
         .to.equal(RELEASE_STATES.RELEASED);
   });
 
-  it("should return DELAYED if release date has passed and isComplete " +
+  it("should return DELAYED if release date has passed and isReleased " +
       "is false", () => {
     const now = new Date();
     const codeFreeze = new Date(now.getTime() - 4 * 24 * 60 * 60 * 1000);

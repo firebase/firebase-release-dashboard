@@ -18,13 +18,15 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
         releaseBranchName: "releases/${releaseName}",
+        isReleased: false,
       },
       {
-        releaseName: "m104",
+        releaseName: "M104",
         releaseOperator: "operator1",
         codeFreezeDate: "2123-07-30",
         releaseDate: "2123-08-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
       {
         releaseName: "M105",
@@ -32,10 +34,13 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-08-30",
         releaseDate: "2123-09-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const existingReleases = [];
+
     const errors = await validateNewReleases(newReleases, existingReleases);
+
     expect(errors).to.be.an("array").that.is.empty;
   });
 
@@ -48,6 +53,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
       {
         releaseName: "M104",
@@ -55,6 +61,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-07-30",
         releaseDate: "2123-08-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
       {
         releaseName: "M105",
@@ -62,6 +69,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-08-30",
         releaseDate: "2123-09-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const existingReleases = [
@@ -71,9 +79,12 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2022-06-30",
         releaseDate: "2022-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
+
     const errors = await validateNewReleases(newReleases, existingReleases);
+
     expect(errors).to.be.an("array").that.is.empty;
   });
 
@@ -85,6 +96,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const existingReleases = [];
@@ -102,6 +114,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const existingReleases = [];
@@ -119,6 +132,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "not a date",
         releaseDate: "not a date",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const existingReleases = [];
@@ -141,6 +155,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-07-30",
         releaseDate: "2123-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const existingReleases = [];
@@ -163,6 +178,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-07-07",
         releaseDate: "2123-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const existingReleases = [];
@@ -184,6 +200,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
       {
         releaseName: "M103",
@@ -191,6 +208,7 @@ describe("validateNewReleases", () => {
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
         releaseBranchName: "branch",
+        isReleased: false,
       },
     ];
     const errors = validateNewReleases(newReleases);
@@ -207,11 +225,55 @@ describe("validateNewReleases", () => {
         releaseOperator: "operator1",
         codeFreezeDate: "2123-06-30",
         releaseDate: "2123-07-07",
+        isReleased: false,
       },
     ];
+
     const errors = validateNewReleases(newReleases);
     const expectedErrors = {
       message: ERRORS.MISSING_RELEASE_FIELD,
+      offendingRelease: newReleases[0],
+    };
+
+    expect(errors).to.deep.include(expectedErrors);
+  });
+
+  it("should return an error for not having released state", async () => {
+    const newReleases = [
+      {
+        releaseName: "M101",
+        releaseOperator: "operator1",
+        codeFreezeDate: "2123-07-07",
+        releaseDate: "2123-07-07",
+      },
+    ];
+    const existingReleases = [];
+
+    const errors = await validateNewReleases(newReleases, existingReleases);
+    const expectedErrors = {
+      message: ERRORS.MISSING_RELEASE_FIELD,
+      offendingRelease: newReleases[0],
+    };
+
+    expect(errors).to.deep.include(expectedErrors);
+  });
+
+  it("should return an error for not having invalid"+
+  "released state", async () => {
+    const newReleases = [
+      {
+        releaseName: "M101",
+        releaseOperator: "operator1",
+        codeFreezeDate: "2123-07-07",
+        releaseDate: "2123-07-07",
+        isReleased: "not a boolean",
+      },
+    ];
+    const existingReleases = [];
+
+    const errors = await validateNewReleases(newReleases, existingReleases);
+    const expectedErrors = {
+      message: ERRORS.INVALID_RELEASE_FIELD,
       offendingRelease: newReleases[0],
     };
 
@@ -291,6 +353,20 @@ describe("validateNewReleasesStructure", () => {
           " property 'releaseDate'");
   });
 
+  it("should throw an error if a release property is of incorrect type", () => {
+    const newReleases = [{
+      releaseName: "M100",
+      releaseOperator: "operator1",
+      codeFreezeDate: Timestamp.now(),
+      releaseDate: Timestamp.now(),
+      releaseBranchName: "test",
+      isReleased: "not a boolean",
+    }];
+    expect(() => validateNewReleasesStructure(newReleases)).
+        to.throw("Each release should have a boolean"+
+        " property 'isReleased'");
+  });
+
   it("should not throw an error if all releases are correct", () => {
     const newReleases = [{
       releaseName: "M100",
@@ -298,6 +374,7 @@ describe("validateNewReleasesStructure", () => {
       codeFreezeDate: Timestamp.now(),
       releaseDate: Timestamp.now(),
       releaseBranchName: "branch",
+      isReleased: false,
     }];
     expect(() => validateNewReleasesStructure(newReleases)).to.not.throw();
   });

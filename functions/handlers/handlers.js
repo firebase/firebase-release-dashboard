@@ -459,7 +459,7 @@ async function syncReleaseState(releaseId, octokit) {
   const releaseState = calculateReleaseState(
       releaseData.codeFreezeDate.toDate(),
       releaseData.releaseDate.toDate(),
-      releaseData.isComplete);
+      releaseData.isReleased);
 
   log("Inferred release state", {releaseState: releaseState});
 
@@ -659,7 +659,6 @@ async function handleReleaseError(releaseId, err, contextMsg) {
   );
   await updateReleaseState(releaseId, RELEASE_STATES.ERROR);
 }
-
 
 module.exports = {
   addReleases,

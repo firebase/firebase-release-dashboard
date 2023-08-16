@@ -31,6 +31,7 @@ const theme = createTheme({
       light: firebaseColors.googleBlue2,
       dark: firebaseColors.firebaseNavy,
       contrastText: "#ffffff",
+      disabled: grey[500],
     },
     secondary: {
       main: firebaseColors.firebaseOrange,

@@ -5,6 +5,7 @@ import React from "react";
 import {RELEASE_STATES} from "../../../utils/releaseStates";
 import StateChip from "../../Release/StateChip/StateChip";
 import ReleaseActionButtons from "../ReleaseActionButtons/ReleaseActionButtons";
+import ToggleReleaseButton from "../ToggleReleaseButton/ToggleReleaseButton";
 
 /**
  * Displays the release's metadata in table cells.
@@ -18,10 +19,12 @@ import ReleaseActionButtons from "../ReleaseActionButtons/ReleaseActionButtons";
  * @param {string} release.state - Release state.
  * @param {boolean} refreshing - Whether the release is being refreshed.
  * @param {boolean} deleting - Whether the release is being deleted.
+ * @param {boolean} toggling - Whether the release state is being toggled.
  * @param {Function} handleRefreshClick - Function to handle refresh button
  * click.
  * @param {Function} handleEditClick - Function to handle edit button click.
  * @param {Function} handleDeleteClick - Function to handle delete button click.
+ * @param {Function} handleReleasedToggle - Function to handle released toggle
  * @return {JSX.Element} Rendered component.
  */
 function ReleaseRowContent(
@@ -29,9 +32,11 @@ function ReleaseRowContent(
       release,
       refreshing,
       deleting,
+      toggling,
       handleRefreshClick,
       handleEditClick,
       handleDeleteClick,
+      handleReleasedToggle,
     },
 ) {
   return (
@@ -59,6 +64,13 @@ function ReleaseRowContent(
       <TableCell>
         <StateChip state={release.state} />
       </TableCell>
+      <TableCell>
+        <ToggleReleaseButton
+          release={release}
+          toggling={toggling}
+          handleReleasedToggle={handleReleasedToggle}
+        />
+      </TableCell>
       <ReleaseActionButtons
         refreshing={refreshing}
         deleting={deleting}
@@ -81,9 +93,11 @@ ReleaseRowContent.propTypes = {
   }).isRequired,
   refreshing: PropTypes.bool.isRequired,
   deleting: PropTypes.bool.isRequired,
+  toggling: PropTypes.bool.isRequired,
   handleRefreshClick: PropTypes.func.isRequired,
   handleEditClick: PropTypes.func.isRequired,
   handleDeleteClick: PropTypes.func.isRequired,
+  handleReleasedToggle: PropTypes.func.isRequired,
 };
 
 export default ReleaseRowContent;

@@ -29,9 +29,11 @@ function ReleaseRow({releaseId, openSnackbar}) {
     deleting,
     refreshing,
     submitting,
+    toggling,
     handleDeleteClick,
     handleRefreshClick,
     handleSubmitClick,
+    handleReleasedToggle,
   } = useAdminReleaseActions(release, openSnackbar, setEditing);
 
   /**
@@ -93,9 +95,11 @@ function ReleaseRow({releaseId, openSnackbar}) {
           release={release}
           refreshing={refreshing}
           deleting={deleting}
+          toggling={toggling}
           handleRefreshClick={handleRefreshClick}
           handleEditClick={handleEditClick}
           handleDeleteClick={handleDeleteClick}
+          handleReleasedToggle={handleReleasedToggle}
         />
       </TableRow>
       <EditReleaseDialog
