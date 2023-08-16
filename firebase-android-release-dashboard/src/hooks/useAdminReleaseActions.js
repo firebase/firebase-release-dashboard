@@ -90,6 +90,8 @@ const useReleaseActions = (release, openSnackbar, setEditing) => {
   };
 
   /**
+   * Handle a click on the released toggle button by calling the modifyRelease
+   * API with the toggled release state.
    *
    * @param {Object} release
    */
