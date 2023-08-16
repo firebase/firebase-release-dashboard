@@ -19,6 +19,8 @@ Anyone can run this application locally in the emulators, but only administrator
 
 In the `functions` directory, you can install dependencies with `npm install`.
 
+You can run the unit tests with `npm test`.
+
 ### React app
 
 In the `firebase-android-release-dashboard` directory, you can:
