@@ -252,13 +252,16 @@ function encodeLibraryDocId(libraryName, updatedVersion) {
  */
 function batchSetLibrariesForRelease(batch, libraries, releaseId) {
   Object.entries(libraries).forEach(
-      ([libraryName, {updatedVersion, optedIn, libraryGroupRelease}]) => {
+      ([libraryName,
+        {updatedVersion, optedIn, optedOut, libraryGroupRelease},
+      ]) => {
         const uniqueId = encodeLibraryDocId(libraryName, updatedVersion);
         const docRef = db.collection("libraries").doc(uniqueId);
         batch.set(docRef, {
           libraryName,
           updatedVersion,
           optedIn,
+          optedOut,
           libraryGroupRelease,
           releaseID: releaseId,
         });
@@ -306,27 +309,6 @@ async function updateLibrariesForRelease(libraries, releaseId) {
   await batchDeleteOptedOutLibraries(batch, libraries, releaseId);
 
   await batch.commit();
-}
-
-/**
- * Retrieve the library ID of the Firestore library document
- *
- * @param {string} libraryName The name of the library to fetch.
- * @throws {Error} If there is no library with the given name.
- * @return {Promise<string>} A promise that resolves to the library ID.
- */
-async function getLibraryId(libraryName) {
-  const librarySnapshot = await db.collection("libraries")
-      .where("libraryName", "==", libraryName)
-      .get();
-
-  if (librarySnapshot.empty) {
-    throw new Error(`
-      Library in release report does not exist in Firestore: ${libraryName}`,
-    );
-  }
-
-  return librarySnapshot.docs[0].id;
 }
 
 /**
@@ -409,13 +391,18 @@ async function batchDeleteOldChanges(batch, newChanges, releaseId) {
  * Creates new change documents for each change in the release report, and
  * deletes any existing changes associated with the release.
  *
+ * @param {Object} libraryMetadata Metadata about the libraries in the release.
  * @param {Map<string, Array<Object>>} libraryChanges Map of library names
  * to changes.
  * @param {string} releaseId The ID of the associated release.
  * @throws {Error} If a library in the release report does not exist in
  * Firestore.
  */
-async function updateChangesForRelease(libraryChanges, releaseId) {
+async function updateChangesForRelease(
+    libraryMetadata,
+    libraryChanges,
+    releaseId,
+) {
   const batch = db.batch();
 
   // Delete the changes that are no longer in the release report
@@ -424,7 +411,8 @@ async function updateChangesForRelease(libraryChanges, releaseId) {
   const libraryNames = Object.keys(libraryChanges);
   for (const libraryName of libraryNames) {
     const changes = libraryChanges[libraryName];
-    const libraryId = await getLibraryId(libraryName);
+    const updatedLibraryVersion = libraryMetadata[libraryName].updatedVersion;
+    const libraryId = encodeLibraryDocId(libraryName, updatedLibraryVersion);
     batchSetReleaseChanges(batch, changes, libraryId, releaseId);
   }
 

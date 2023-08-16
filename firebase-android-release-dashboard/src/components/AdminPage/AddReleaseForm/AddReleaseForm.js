@@ -31,6 +31,7 @@ function AddReleaseForm({openSnackbar}) {
     releaseOperator: "ACore team member", // Can't store user data
     codeFreezeDate: "",
     releaseDate: "",
+    isReleased: false,
   });
 
   /**
@@ -56,6 +57,7 @@ function AddReleaseForm({openSnackbar}) {
         releaseOperator: "ACore team member",
         codeFreezeDate: "",
         releaseDate: "",
+        isReleased: false,
       });
     }
   };

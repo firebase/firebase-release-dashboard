@@ -554,7 +554,7 @@ async function syncReleaseState(releaseId, octokit) {
     // to be updated first. If we do this in parallel we might
     // create a change for a library that doesn't exist yet,
     // which will cause an error.
-    await updateChangesForRelease(libraryChanges, releaseId);
+    await updateChangesForRelease(libraryMetadata, libraryChanges, releaseId);
 
     const updatedReleaseData = {
       state: releaseState,
