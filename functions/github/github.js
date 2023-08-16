@@ -1,6 +1,7 @@
 const {log} = require("firebase-functions/logger");
 const {parseGradlePropertiesForVersion} = require("../utils/utils.js");
 const crypto = require("crypto");
+const {getUniqueValues} = require("../utils/utils.js");
 
 const OWNER = "firebase";
 const REPO = "firebase-android-sdk";
@@ -112,20 +113,26 @@ async function getReleaseReport(octokit, releaseData) {
 }
 
 /**
- * Fetches and returns metadata for each library in the release configuration.
- * The metadata includes the updated version, whether the library is opted in
- * to the release, and whether the library is lockstep. A library is lockstep
- * if it is part of the release but has no changes. A library is opted in if
- * it was not originally part of the release report, but has been manually opted
- * in by being added to the release configuration.
+ * Fetches and returns metadata for each library in the release according to
+ * the list of libraries in the release, and the changes that we know about.
+ * Metadata includes whether the library is part of a group release, whether
+ * the library is opted in to the release, and the updated version of the
+ * library.
  *
- * Fetches and returns metadata for each library in the release according
- * to the list of libraries in libraryNames. The metadata includes the updated
- * version, whether the library is opted in to the release, and whether the
- * library is a part of a group release. A library is a part of a group release
- * if it is part of the release but has no changes.
- * A library is opted in if it is not in the libraryChanges, but is in the
- * libraryNames.
+ * A library is part of a group release if it has zero changes, but is included
+ * in the release.
+ *
+ * A library is opted in to a release if it is not included in our changes at
+ * all, but was included in the release. Similarly, a library is opted out of
+ * a release if it is included in our changes, but it is not included in the
+ * list of releases.
+ *
+ * Note: These inferences for metadata are made with the assumption that
+ * the changes for a release are only generated once at the initial cut of
+ * the release, and that libraries that are part of a group release are
+ * included in those changes, but are just empty. We also assume that
+ * the list of changes is what represents the libraries that are truly
+ * releasing, whether they are included in the changes or not.
  *
  * @param {Octokit} octokit - The authenticated Octokit client.
  * @param {string} releaseBranchName - The release branch name
@@ -142,25 +149,28 @@ async function getLibraryMetadata(
     libraryChanges,
 ) {
   const libraryMetadata = {};
+  const allLibraryNames = getUniqueValues(
+      [...libraryNames, ...Object.keys(libraryChanges)],
+  );
   const libraryVersions = await getLibraryVersions(
       octokit,
       releaseBranchName,
-      libraryNames,
+      allLibraryNames,
   );
-  log("Fetched library versions", {libraryVersions: libraryVersions});
 
   for (const library in libraryVersions) {
     if (Object.prototype.hasOwnProperty.call(libraryVersions, library)) {
+      const libraryIsReleasing = libraryNames.includes(library);
       libraryMetadata[library] = {
         "updatedVersion": libraryVersions[library],
-        "optedIn": !libraryChanges[library],
-        "libraryGroupRelease": !libraryChanges[library] ||
-          libraryChanges[library].length === 0,
+        "optedIn": libraryIsReleasing && !libraryChanges[library],
+        "optedOut": !libraryIsReleasing && libraryChanges[library],
+        "libraryGroupRelease": libraryChanges[library] &&
+        libraryChanges[library].length === 0,
       };
     }
   }
 
-  log("Library metadata", {libraryMetadata: libraryMetadata});
   return libraryMetadata;
 }
 

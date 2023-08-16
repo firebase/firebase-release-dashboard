@@ -529,6 +529,8 @@ async function syncReleaseState(releaseId, octokit) {
         libraryChanges,
     );
 
+    log("Fetched library metadata", {libraryMetadata: libraryMetadata});
+
     // Get the status of the check suite running on the release branch
     const checkRuns = await listCheckRuns(octokit,
         releaseData.releaseBranchName);

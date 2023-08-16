@@ -207,6 +207,18 @@ function filterOutKtx(libaries) {
 }
 
 /**
+ * Filters out duplicate values from an array.
+ *
+ * @param {Array} arr
+ * @return {Array} The updated array without any duplicate values.
+ */
+function getUniqueValues(arr) {
+  return arr.filter(
+      (value, index, self) => self.indexOf(value) === index,
+  );
+}
+
+/**
  * Gets the stack trace from an error.
  *
  * @param {Error} error - The error to get the stack trace from.
@@ -234,5 +246,6 @@ module.exports = {
   mergeKtxIntoRoot,
   filterOutKtx,
   getCommitIdsFromChanges,
+  getUniqueValues,
   getStackTrace,
 };
