@@ -117,7 +117,7 @@ function validateReleaseDates(release) {
 }
 
 /**
- * Validates that the release isReleased status exists and is a boolean.
+ * Validates that the `release.isReleased` status exists and is a boolean.
  *
  * @param {Object} release - The release to validate.
  * @return {Array} errors - A list of errors from the validation of the released
