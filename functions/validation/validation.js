@@ -1,17 +1,5 @@
 const {Timestamp} = require("firebase-admin/firestore");
 const ERRORS = require("../utils/errors.js");
-const REGEX = require("../utils/regex.js");
-
-/**
- * Helper function to check the release name format.
- * The format of release names must be "M<releaseNumber>"
- *
- * @param {string} name - The release name.
- * @return {bool} - True if the release name is valid.
- */
-function isValidReleaseName(name) {
-  return REGEX.RELEASE_NAME.test(name);
-}
 
 /** Helper function to check that a string represents a valid date.
  *
@@ -46,11 +34,6 @@ function validateReleaseName(release) {
       release.releaseName.trim() === "") {
     errors.push({
       message: ERRORS.INVALID_RELEASE_FIELD,
-      offendingRelease: release,
-    });
-  } else if (!isValidReleaseName(release.releaseName)) {
-    errors.push({
-      message: ERRORS.INVALID_RELEASE_NAME,
       offendingRelease: release,
     });
   }
@@ -308,7 +291,6 @@ function validateNewReleasesStructure(newReleases) {
 }
 
 module.exports = {
-  isValidReleaseName,
   isValidDate,
   validateRelease,
   validateNewReleases,

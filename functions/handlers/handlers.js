@@ -19,14 +19,15 @@ const {
   getReleaseData,
   deleteAllReleaseData,
   releaseExists,
+  setReleaseError,
 } = require("../database/database.js");
 const {
-  checkReleaseBranchExists,
   getReleaseConfig,
   getReleaseReport,
   getBuildArtifactsWorkflow,
   listCheckRuns,
   getLibraryMetadata,
+  getReleaseBranch,
 } = require("../github/github.js");
 const {
   validateNewReleases,
@@ -39,6 +40,7 @@ const {
   calculateReleaseState,
   filterOutKtx,
   mergeKtxIntoRoot,
+  getStackTrace,
 } = require("../utils/utils.js");
 const {authenticateUser} = require("../utils/auth.js");
 const RELEASE_STATES = require("../utils/releaseStates.js");
@@ -434,11 +436,18 @@ async function modifyRelease(req, res) {
  * if the release is active. It also handles possible errors and updates
  * the release state to "error" if an exception is thrown.
  *
+ * We store the logs in Firestore so that we can view them provide
+ * context for any errors that occur in the dashboard. We only store errors
+ * here because this is the only place where a release may enter an error
+ * state.
+ *
  * @param {string} releaseId - The ID of the release to sync.
  * @param {Object} octokit - The Octokit instance for interacting with the
  * GitHub API.
- * @throws Will throw an error if the release branch does not exist or if
- * any of the promises reject.
+ * @throws {Error} If the release state cannot be determined from the
+ * state of the release. If a sync fails, the release state will be set to
+ * "error", and the release operator must resolve the issue and attempt
+ * to sync again.
  */
 async function syncReleaseState(releaseId, octokit) {
   // Get the release document from Firestore
@@ -462,21 +471,24 @@ async function syncReleaseState(releaseId, octokit) {
     return;
   }
 
-  const releaseBranchExists = await checkReleaseBranchExists(
-      octokit,
-      releaseData.releaseBranchName,
-  );
-
+  // If we can get the release branch, then we know that it exists.
+  // If the request fails, we know that the release branch does not exist.
   // If release release has passed the codeFreezeDate but the release
   // branch does not exist, we can't proceed with syncing the release.
   // The release branch should exist at this point, so we enter an
   // error state.
-  if (!releaseBranchExists) {
-    log("Release branch does not exist", {releaseData: releaseData});
-    await updateReleaseState(releaseId, RELEASE_STATES.ERROR);
-    throw new Error(
-        `Release branch ${releaseData.releaseBranchName} does not exist`,
+  try {
+    await getReleaseBranch(
+        octokit,
+        releaseData.releaseBranchName,
     );
+  } catch (err) {
+    await handleReleaseError(
+        releaseId,
+        err,
+        "Could not retrieve the release branch from GitHub.",
+    );
+    throw err;
   }
 
   // Since the release branch exists, we can fetch data from GitHub
@@ -558,9 +570,11 @@ async function syncReleaseState(releaseId, octokit) {
 
     await updateRelease(releaseId, updatedReleaseData);
   } catch (err) {
-    await updateReleaseState(releaseId, RELEASE_STATES.ERROR);
-    error("Failed to sync release for a release that has passed code freeze"
-        , {releaseId: releaseId, error: err.message});
+    await handleReleaseError(
+        releaseId,
+        err,
+        "Failed to sync release data from release branch on GitHub",
+    );
     throw err;
   }
 }
@@ -616,6 +630,34 @@ async function deleteRelease(req, res) {
     );
     return res.status(200).send("OK");
   });
+}
+
+/**
+ * Handles errors that occur while syncing a release.
+ *
+ * Logs the error, sets the release state to "error", and stores the error
+ * in Firestore. The error can then be viewed in the dashboard, along
+ * with the stack trace.
+ *
+ * @param {string} releaseId
+ * @param {Error} err - The error that occurred.
+ * @param {string} contextMsg - A message to provide context for the error.
+ */
+async function handleReleaseError(releaseId, err, contextMsg) {
+  error("Error while syncing release",
+      {releaseId: releaseId,
+        error: err.message,
+      },
+  );
+
+  const stackTrace = getStackTrace(err);
+  await setReleaseError(
+      releaseId,
+      err.message,
+      stackTrace,
+      contextMsg,
+  );
+  await updateReleaseState(releaseId, RELEASE_STATES.ERROR);
 }
 
 module.exports = {

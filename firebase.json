@@ -20,7 +20,7 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "public": "public",
+    "public": "firebase-android-release-dashboard/build",
     "ignore": [
       "firebase.json",
       "**/.*",

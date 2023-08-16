@@ -4,45 +4,9 @@ const {
   validateNewReleases,
   validateNewReleasesStructure,
   isValidDate,
-  isValidReleaseName,
 } = require("../../validation/validation.js");
 const ERRORS = require("../../utils/errors.js");
 const {Timestamp} = require("firebase-admin/firestore");
-
-describe("isValidReleaseName", () => {
-  it("should return true for a valid release name", () => {
-    const validReleaseName = "M123";
-    expect(isValidReleaseName(validReleaseName)).to.be.true;
-  });
-
-  it("should return false for a release name without the M prefix", () => {
-    const invalidReleaseName = "123";
-    expect(isValidReleaseName(invalidReleaseName)).to.be.false;
-  });
-
-  it("should return true for a release name with non-numeric characters"+
-    " after the M", () => {
-    const invalidReleaseName = "M12_A12";
-    expect(isValidReleaseName(invalidReleaseName)).to.be.true;
-  });
-
-  it("should return false for a release name with non-numeric characters"+
-    " before the M", () => {
-    const invalidReleaseName = "AM12";
-    expect(isValidReleaseName(invalidReleaseName)).to.be.false;
-  });
-
-  it("should return false for a release name with non-numeric characters"+
-    " between the M and the relase number", () => {
-    const invalidReleaseName = "MA12";
-    expect(isValidReleaseName(invalidReleaseName)).to.be.false;
-  });
-
-  it("should return false for an empty string", () => {
-    const invalidReleaseName = "";
-    expect(isValidReleaseName(invalidReleaseName)).to.be.false;
-  });
-});
 
 describe("validateNewReleases", () => {
   it("should return no errors for valid releases when there are no previous"+
@@ -124,7 +88,7 @@ describe("validateNewReleases", () => {
     expect(errors).to.be.an("array").that.is.empty;
   });
 
-  it("should return an error for invalid release name", async () => {
+  it("should not return an error for invalid release name", async () => {
     const newReleases = [
       {
         releaseName: "101",
@@ -138,15 +102,11 @@ describe("validateNewReleases", () => {
     const existingReleases = [];
 
     const errors = await validateNewReleases(newReleases, existingReleases);
-    const expectedErrors = {
-      message: ERRORS.INVALID_RELEASE_NAME,
-      offendingRelease: newReleases[0],
-    };
 
-    expect(errors).to.deep.include(expectedErrors);
+    expect(errors).to.be.an("array").that.is.empty;
   });
 
-  it("should return an error for invalid release name", async () => {
+  it("should not return an error for invalid release name", async () => {
     const newReleases = [
       {
         releaseName: "m101",
@@ -160,12 +120,8 @@ describe("validateNewReleases", () => {
     const existingReleases = [];
 
     const errors = await validateNewReleases(newReleases, existingReleases);
-    const expectedErrors = {
-      message: ERRORS.INVALID_RELEASE_NAME,
-      offendingRelease: newReleases[0],
-    };
 
-    expect(errors).to.deep.include(expectedErrors);
+    expect(errors).to.be.an("array").that.is.empty;
   });
 
   it("should return an error for invalid date", async () => {

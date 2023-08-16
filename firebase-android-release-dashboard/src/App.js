@@ -10,6 +10,7 @@ import MainContent from "./components/MainContent";
 import AdminMain from "./components/AdminPage/AdminMain";
 import theme from "./config/theme";
 import {useAuthentication} from "./hooks/useAuthentication";
+import ReleaseNotifier from "./components/ReleaseNotifier/ReleaseNotifier";
 import {loadGoogleFont} from "./services/fontLoader";
 
 /**
@@ -28,6 +29,7 @@ function App() {
     <AppErrorBoundary>
       <ThemeProvider theme={theme}>
         <CssBaseline />
+        <ReleaseNotifier />
         <Router>
           <Box>
             <Header isLoggedIn={isLoggedIn} setIsLoggedIn={setIsLoggedIn}/>

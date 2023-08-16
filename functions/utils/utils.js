@@ -13,6 +13,7 @@ function convertDateToTimestamp(dateString) {
   try {
     // Attempt to parse the date string and convert to Firestore Timestamp
     const dateObject = new Date(dateString);
+    dateObject.setHours(8, 0, 0, 0); // Set to 8am UTC
     if (!isNaN(dateObject)) {
       return Timestamp.fromDate(dateObject);
     } else {
@@ -205,6 +206,23 @@ function filterOutKtx(libaries) {
   return libaries.filter((library) => !library.includes("/ktx"));
 }
 
+/**
+ * Gets the stack trace from an error.
+ *
+ * @param {Error} error - The error to get the stack trace from.
+ * @throws {Error} If the provided argument is not an Error object.
+ * @return {string} The stack trace.
+ */
+function getStackTrace(error) {
+  if (!(error instanceof Error)) {
+    throw new Error(
+        `Provided argument is not an Error object: ${error}}`,
+    );
+  }
+
+  return error.stack.trim();
+}
+
 module.exports = {
   convertDateToTimestamp,
   convertSingleReleaseDatesToTimestamps,
@@ -216,4 +234,5 @@ module.exports = {
   mergeKtxIntoRoot,
   filterOutKtx,
   getCommitIdsFromChanges,
+  getStackTrace,
 };
