@@ -26,10 +26,14 @@ You can run the unit tests with `npm test`.
 In the `firebase-android-release-dashboard` directory, you can:
 
 1. Install dependencies by running `npm install`
-2. (Only needed if deploying) Set up environment variables in `.env`
+2. **Admins only**: (Only needed if deploying) Set up environment variables in `.env`. The environment variables that need to be defined are used for initializing the Firebase configuration in [firebase.js](https://github.com/firebase/firebase-release-dashboard/tree/master/firebase-android-release-dashboard/src/firebase.js). The values that need to be assigned to the environment variables can be found in [Project Settings](https://firebase.corp.google.com/project/acore-release-dashboard/settings/general/web:N2U1YmE2YTgtNWFjMC00YTUzLWIzNTctN2RkNWE2N2RhNDQ4) in the Firebase console of the project.
 3. Generate a production build with `npm run build`
 
+During local development, you can start the development server by running `npm start`, or serve the production build by running `serve -s build/`.
+
 ### Deploy
+
+**Important: Deploying the project updates everything. Please make sure your local version of the application is safe to deploy. This can include making sure the `firestore.rules` have not been modified, the environment variables are set, and that the production build you're serving has been approved and is working.**
 
 To deploy the application to production, from the root directory, you can run `firebase deploy`.
 
