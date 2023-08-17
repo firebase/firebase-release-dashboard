@@ -8,7 +8,7 @@ import BuildArtifacts from "../BuildArtifacts/BuildArtifacts.js";
 import GithubChecks from "../GithubChecks/index.js";
 import ReleaseLibraries from "../ReleaseLibraries/ReleaseLibraries.js";
 import useStyles from "./styles.js";
-import useLibraries from "../../../hooks/useLibraries.js";
+import useReleasingLibraries from "../../../hooks/useReleasingLibraries.js";
 
 // Sort libraries alphabetically by name
 const sortLibraries = (libraries) => {
@@ -39,7 +39,7 @@ const sortLibraries = (libraries) => {
 function ReleaseDetails({release}) {
   const classes = useStyles();
 
-  const libraries = useLibraries(release.id);
+  const libraries = useReleasingLibraries(release.id);
   const sortedLibraries = sortLibraries(libraries);
 
   if (release.state === RELEASE_STATES.ERROR) {

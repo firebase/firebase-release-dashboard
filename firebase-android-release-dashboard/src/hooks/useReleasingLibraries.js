@@ -3,18 +3,22 @@ import {collection, query, where, onSnapshot} from "firebase/firestore";
 import {db} from "../firebase";
 
 /**
- * Custom hook to fetch all libraries for a given release from Firestore.
+ * Custom hook to fetch all releasing libraries for a given release
+ * from Firestore. Releasing libraries are libraries that are not
+ * opted out of the release.
  *
  * @param {string} releaseId - The ID of the release.
  * @return {Array} The libraries of the release.
  */
-function useLibraries(releaseId) {
+function useReleasingLibraries(releaseId) {
   const [libraries, setLibraries] = useState([]);
 
   useEffect(() => {
     const librariesCollection = collection(db, "libraries");
     const librariesQuery = query(
-        librariesCollection, where("releaseID", "==", releaseId),
+        librariesCollection,
+        where("releaseID", "==", releaseId),
+        where("optedOut", "==", false),
     );
 
     const unsubscribe = onSnapshot(librariesQuery, (snapshot) => {
@@ -33,4 +37,4 @@ function useLibraries(releaseId) {
   return libraries;
 }
 
-export default useLibraries;
+export default useReleasingLibraries;
