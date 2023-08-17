@@ -161,12 +161,15 @@ async function getLibraryMetadata(
   for (const library in libraryVersions) {
     if (Object.prototype.hasOwnProperty.call(libraryVersions, library)) {
       const libraryIsReleasing = libraryNames.includes(library);
+      const libraryIsInChanges = Object.keys(libraryChanges).includes(library);
+      const libraryHasAtLeastOneChange = libraryIsInChanges &&
+        libraryChanges[library].length > 0;
       libraryMetadata[library] = {
         "updatedVersion": libraryVersions[library],
-        "optedIn": libraryIsReleasing && !libraryChanges[library],
-        "optedOut": !libraryIsReleasing && libraryChanges[library],
-        "libraryGroupRelease": libraryChanges[library] &&
-        libraryChanges[library].length === 0,
+        "optedIn": libraryIsReleasing && !libraryIsInChanges,
+        "optedOut": !libraryIsReleasing && libraryIsInChanges,
+        "libraryGroupRelease": libraryIsInChanges &&
+          !libraryHasAtLeastOneChange,
       };
     }
   }
