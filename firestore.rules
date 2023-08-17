@@ -26,7 +26,7 @@ service cloud.firestore {
     // Errors are only readable by authenticated users, and not writeable.
     match /releaseError/{document=**} {
       allow read: if request.auth != null;
-      allow write: if false;
+      allow write: if request.auth != null;
     }
   }
 }
