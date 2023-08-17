@@ -12,8 +12,8 @@ const STATE_HEADER = "State";
 
 const releaseListHeaderItems = [
   RELEASE_NAME_HEADER,
-  RELEASE_DATE_HEADER,
   CODE_FREEZE_DATE_HEADER,
+  RELEASE_DATE_HEADER,
   STATE_HEADER,
 ];
 
