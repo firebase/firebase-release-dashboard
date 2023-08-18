@@ -239,6 +239,18 @@ function encodeLibraryDocId(libraryName, updatedVersion) {
 }
 
 /**
+ * Encode a change document ID.
+ *
+ * @param {string} commitId The id of the commit that the change is
+ * associated with.
+ * @param {string} libraryId The ID of the associated library.
+ * @return {string} The ID of the change document.
+ */
+function encodeChangeDocId(commitId, libraryId) {
+  return `${libraryId}-${commitId}`;
+}
+
+/**
  * Adds new library release documents to Firestore batch.
  *
  * Note that this will not commit the change, it merely adds it to
@@ -345,7 +357,8 @@ async function batchDeleteReleaseChanges(batch, releaseId) {
  */
 function batchSetReleaseChanges(batch, changes, libraryId, releaseId) {
   changes.forEach((change) => {
-    const docRef = db.collection("changes").doc(change.commitId);
+    const docId = encodeChangeDocId(change.commitId, libraryId);
+    const docRef = db.collection("changes").doc(docId);
     batch.set(docRef, {
       commitTitle: parseCommitTitleFromMessage(change.message),
       message: change.message,
