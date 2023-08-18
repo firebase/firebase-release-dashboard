@@ -5,6 +5,7 @@ import {format} from "date-fns";
 import {RELEASE_STATES} from "../../../utils/releaseStates";
 import useStyles from "./styles";
 import StateChip from "../StateChip/StateChip";
+import {useAuthentication} from "../../../hooks/useAuthentication";
 
 /**
  * Represents the metadata of a single release.
@@ -19,8 +20,10 @@ import StateChip from "../StateChip/StateChip";
  */
 function ReleaseMetadata({release}) {
   const classes = useStyles();
+  const {isLoggedIn} = useAuthentication();
 
   const {
+    id,
     releaseName,
     releaseDate,
     codeFreezeDate,
@@ -57,7 +60,11 @@ function ReleaseMetadata({release}) {
         </Typography>
       </Grid>
       <Grid item xs={3}>
-        <StateChip state={state} />
+        <StateChip
+          state={state}
+          releaseId={id}
+          isLoggedIn={isLoggedIn}
+        />
       </Grid>
     </Grid>
   );
@@ -65,6 +72,7 @@ function ReleaseMetadata({release}) {
 
 ReleaseMetadata.propTypes = {
   release: PropTypes.shape({
+    id: PropTypes.string.isRequired,
     releaseName: PropTypes.string.isRequired,
     releaseDate: PropTypes.instanceOf(Date).isRequired,
     codeFreezeDate: PropTypes.instanceOf(Date).isRequired,
