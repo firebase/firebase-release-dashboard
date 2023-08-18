@@ -7,7 +7,9 @@ import {useEffect} from "react";
  */
 function NotificationRequester() {
   useEffect(() => {
-    Notification.requestPermission();
+    if ("Notification" in window) {
+      Notification.requestPermission();
+    }
   }, []);
 
   return null; // This component doesn't render anything
