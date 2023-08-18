@@ -62,7 +62,11 @@ function ReleaseRowContent(
         </Typography>
       </TableCell>
       <TableCell>
-        <StateChip state={release.state} />
+        <StateChip
+          state={release.state}
+          releaseId={release.id}
+          isLoggedIn={true}
+        />
       </TableCell>
       <TableCell>
         <ToggleReleaseButton

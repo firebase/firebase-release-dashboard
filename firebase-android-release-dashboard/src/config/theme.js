@@ -54,6 +54,7 @@ const theme = createTheme({
       orange: orange[400],
       gray: grey[400],
     },
+    errorText: red[400],
   },
 });
 
