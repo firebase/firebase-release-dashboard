@@ -203,7 +203,9 @@ function mergeKtxIntoRoot(libraryData) {
  * submodules.
  */
 function filterOutKtx(libaries) {
-  return libaries.filter((library) => !library.includes("/ktx"));
+  return libaries
+    .filter((library) => !library.includes("/ktx"))
+    .map((library) => library.replace(":", "/"));
 }
 
 /**
