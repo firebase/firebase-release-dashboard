@@ -69,6 +69,9 @@ function convertReleaseDatesToTimestamps(releases) {
  * provided parameters.
  */
 function calculateReleaseState(codeFreeze, release, isReleased) {
+  if (isReleased) {
+    return RELEASE_STATES.RELEASED
+  }
   const now = new Date();
 
   // Get time difference in milliseconds
@@ -86,7 +89,7 @@ function calculateReleaseState(codeFreeze, release, isReleased) {
   } else if (diffDaysCodeFreeze < 0 && diffDaysRelease === 0) {
     return RELEASE_STATES.RELEASE_DAY;
   } else if (diffDaysRelease < 0) {
-    return isReleased ? RELEASE_STATES.RELEASED : RELEASE_STATES.DELAYED;
+    return RELEASE_STATES.DELAYED;
   } else {
     throw new Error(`Unable to calculate release state between 
     ${codeFreeze} and ${release} dates`);
@@ -177,7 +180,7 @@ function getCommitIdsFromChanges(libraryChanges) {
 function mergeKtxIntoRoot(libraryData) {
   for (const key in libraryData) {
     if (key.includes("/ktx")) {
-      const rootKey = key.split("/")[0];
+      const rootKey = key.split("/").slice(0,-1).join("/");
 
       // If the root library exists, merge the '/ktx' data into it
       // otherwise, create a new root library with the '/ktx' data
