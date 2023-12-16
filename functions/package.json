@@ -20,7 +20,7 @@
     "eslint-config-google": "^0.14.0",
     "firebase-functions-test": "^3.1.0",
     "mocha": "^10.2.0",
-    "octokit": "^2.1.0",
+    "octokit": "^3.1.2",
     "sinon": "^15.2.0"
   },
   "private": true
