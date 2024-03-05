@@ -33,16 +33,11 @@ function ToggleReleaseButton({release, toggling, handleReleasedToggle}) {
       buttonIcon = <History />;
       buttonClass = classes.unemphasizedButton;
       break;
-    case RELEASE_STATES.DELAYED:
-    case RELEASE_STATES.RELEASE_DAY:
+    default:
       buttonText = "Mark as Released";
       buttonIcon = <Check />;
       buttonClass = classes.emphasizedButton;
       break;
-    default:
-      buttonText = "";
-      buttonIcon = null;
-      buttonClass = classes.defaultButton;
   }
 
   return (
