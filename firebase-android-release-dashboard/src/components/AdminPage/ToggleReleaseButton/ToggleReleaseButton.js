@@ -7,7 +7,7 @@ import useStyles from "./styles";
 
 const toggleIsDisabled = {
   [RELEASE_STATES.SCHEDULED]: true,
-  [RELEASE_STATES.CODE_FREEZE]: true,
+  [RELEASE_STATES.CODE_FREEZE]: false,
   [RELEASE_STATES.RELEASE_DAY]: false,
   [RELEASE_STATES.RELEASED]: false,
   [RELEASE_STATES.DELAYED]: false,
