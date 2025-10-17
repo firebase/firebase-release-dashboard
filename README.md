@@ -1,3 +1,6 @@
+> [!IMPORTANT]  
+> This codebase is no longer maintained and the dashboard is no longer live. This repo is read-only and exists only for archival purposes.
+
 # Firebase Release Dashboard
 
 A release dashboard to help [Firebase Android SDK](https://github.com/firebase/firebase-android-sdk) developers track the state of releases.
